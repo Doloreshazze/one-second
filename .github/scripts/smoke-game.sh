@@ -58,7 +58,8 @@ PY
   adb shell input tap "$x" "$y"
 }
 
-while IFS=$'\t' read -r level title outcome result end_x end_y action; do
+# Keep the gesture list on a separate descriptor. adb shell can read its stdin.
+while IFS=$'\t' read -r -u 3 level title outcome result end_x end_y action; do
   expect_screen "$title"
   if [[ ! -s "artifacts/screenshots/$level.png" ]]; then
     screenshot "$level"
@@ -73,7 +74,7 @@ while IFS=$'\t' read -r level title outcome result end_x end_y action; do
   else
     tap_action
   fi
-done < "$2"
+done 3< "$2"
 
 expect_screen 'Спаси вазу'
 pick_level '9. Сердце мастерской'

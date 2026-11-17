@@ -123,19 +123,23 @@ final class WorkshopRound {
             trigger(Action.FAN, round.time);
         }
         if (round.time >= 1.01f) {
-            boolean safe = has(Action.FAN) && progress(round.time, .48f) > .97f;
+            boolean safe = guidesPlane();
             round.finish(safe ? Outcome.GLIDER_LANDED : Outcome.GLIDER_WET,
                     safe ? 335 : CUP_X, safe ? 265 : CUP_Y - 25);
         }
     }
 
+    boolean guidesPlane() {
+        return has(Action.FAN) && actionTime <= .58f;
+    }
+
     float gliderX(float time) {
-        if (!has(Action.FAN)) return Math.min(CUP_X, 108 + 173 * time);
+        if (!guidesPlane()) return Math.min(CUP_X, 108 + 173 * time);
         return lerp(108 + 173 * actionTime, 335, progress(time, .68f));
     }
 
     float gliderY(float time) {
-        if (!has(Action.FAN)) return Math.min(CUP_Y - 25, glideDown(time));
+        if (!guidesPlane()) return Math.min(CUP_Y - 25, glideDown(time));
         float fraction = progress(time, .64f);
         return lerp(glideDown(actionTime), 265, fraction)
                 - (float) Math.sin(fraction * Math.PI) * 60;

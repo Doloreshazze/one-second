@@ -216,7 +216,7 @@ final class WorkshopArt {
         stroke(1.7f, alpha(ICE, 50 + (int) (78 * opened)));
         canvas.drawPath(path, paint);
 
-        float angle = motion.has(Action.FAN) ? 18 - 31 * opened : 20 + 21 * round.time;
+        float angle = motion.guidesPlane() ? 18 - 31 * opened : 20 + 21 * round.time;
         if (round.event != Outcome.GLIDER_WET || round.effectAge() < .21f) {
             sprite(canvas, R.drawable.piece_plane, motion.gliderX(round.time),
                     motion.gliderY(round.time), 101, angle);
