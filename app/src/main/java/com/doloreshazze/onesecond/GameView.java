@@ -10,9 +10,11 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import static com.doloreshazze.onesecond.PuzzleRound.*;
 
@@ -32,10 +34,13 @@ final class GameView extends View {
     private final RectF board = new RectF(BOARD_X, BOARD_Y, BOARD_X + WIDTH, BOARD_Y + HEIGHT);
     private final RectF action = new RectF(299, 726, 414, 780);
     private final RectF levelMenu = new RectF(325, 20, 417, 62);
+    private final RectF audioMenu = new RectF(365, 62, 417, 109);
     private final Path boardClip = new Path();
+    private final Path speaker = new Path();
     private final Shader frameLight = new RadialGradient(209, 429, 466,
             0xff34333d, INK, Shader.TileMode.CLAMP);
     private final StageArt art;
+    private final WorkshopSound sound;
     private final SharedPreferences progress;
     private final float touchSlop;
     private final float[] aimPoints = new float[24];
@@ -43,28 +48,37 @@ final class GameView extends View {
     private final float[] trailY = new float[12];
 
     private PuzzleRound round;
-    private WorkshopSound sound;
     private float scale = 1, frameX, frameY;
     private float downX, downY;
     private int pointer = -1, aimCount, trailCount, playedNotes, unlocked;
-    private boolean actionDown, menuDown, resultAnnounced;
+    private boolean actionDown, menuDown, audioDown, resultAnnounced;
     private String chapterCount;
     private long lastFrame;
 
-    GameView(Context context) {
+    GameView(Context context, WorkshopSound sound) {
         super(context);
+        this.sound = sound;
         art = new StageArt(getResources());
         progress = context.getSharedPreferences("workshop_progress", Context.MODE_PRIVATE);
         unlocked = Math.max(0, Math.min(LEVELS.length - 1, progress.getInt("unlocked", 0)));
         touchSlop = Math.max(ViewConfiguration.get(context).getScaledTouchSlop(),
                 14 * getResources().getDisplayMetrics().density);
         boardClip.addRoundRect(board, 22, 22, Path.Direction.CW);
+        speaker.moveTo(-11, -4);
+        speaker.lineTo(-7, -4);
+        speaker.lineTo(-2, -8);
+        speaker.lineTo(-2, 8);
+        speaker.lineTo(-7, 4);
+        speaker.lineTo(-11, 4);
+        speaker.close();
+        setSoundEffectsEnabled(false);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         reset(LEVELS[Math.max(0, Math.min(unlocked, progress.getInt("current", 0)))]);
     }
 
     private void reset(Level level) {
         round = new PuzzleRound(level);
+        sound.setLevel(level);
         progress.edit().putInt("current", level.ordinal()).apply();
         chapterCount = (level.ordinal() + 1) + " / " + LEVELS.length;
         aimCount = 0;
@@ -78,34 +92,20 @@ final class GameView extends View {
     }
 
     @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        sound = new WorkshopSound(getContext());
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        if (sound != null) {
-            sound.release();
-            sound = null;
-        }
-        super.onDetachedFromWindow();
-    }
-
-    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         long now = System.nanoTime();
         if (round.active()) {
             rememberMarble();
+            float previousTime = round.time;
             Outcome before = round.event;
             round.advance(Math.min(.045f, (now - lastFrame) / 1e9f));
-            if (round.level == Level.NOTES && sound != null) {
+            if (round.level == Level.NOTES) {
                 while (playedNotes < round.workshop.noteCount()) {
-                    sound.play(round.workshop.noteAt(playedNotes++));
+                    sound.playNote(round.workshop.noteAt(playedNotes++));
                 }
             }
-            if (before == null && round.event != null && sound != null) sound.playEnding(round.event);
+            sound.playEvents(round, previousTime, before);
         }
         lastFrame = now;
 
@@ -131,6 +131,7 @@ final class GameView extends View {
 
         if (round.started && !round.active() && !resultAnnounced) {
             resultAnnounced = true;
+            sound.finishShot();
             setClickable(true);
             setContentDescription(round.event.title + ". " + actionLabel() + ".");
             if (round.won() && round.level.ordinal() == unlocked && unlocked < LEVELS.length - 1) {
@@ -166,6 +167,29 @@ final class GameView extends View {
         canvas.drawLine(392, 38, 397, 43, paint);
         canvas.drawLine(397, 43, 402, 38, paint);
         label(canvas, round.level.title, 24, PAPER, 20, 91, LABEL, Paint.Align.LEFT);
+        drawAudioButton(canvas);
+    }
+
+    private void drawAudioButton(Canvas canvas) {
+        canvas.save();
+        canvas.translate(audioMenu.centerX(), audioMenu.centerY());
+        color(audioDown ? 0xff685445 : 0xff36363f);
+        canvas.drawRoundRect(-20, -16, 20, 16, 12, 12, paint);
+        boolean audible = sound.musicEnabled() || sound.effectsEnabled();
+        color(audible ? StageArt.GOLD : MUTED);
+        canvas.drawPath(speaker, paint);
+        paint.setStrokeWidth(1.6f);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        if (audible) {
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawArc(-5, -6, 8, 6, -50, 100, false, paint);
+            canvas.drawArc(-8, -10, 13, 10, -50, 100, false, paint);
+        } else {
+            canvas.drawLine(3, -4, 11, 4, paint);
+            canvas.drawLine(3, 4, 11, -4, paint);
+        }
+        paint.setStrokeCap(Paint.Cap.BUTT);
+        canvas.restore();
     }
 
     private void stage(Canvas canvas, long timeNanos) {
@@ -282,6 +306,36 @@ final class GameView extends View {
                 .show();
     }
 
+    private void showAudioSettings() {
+        new AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Dialog_Alert)
+                .setTitle(R.string.audio_settings)
+                .setMultiChoiceItems(R.array.audio_options,
+                        new boolean[] {sound.musicEnabled(), sound.effectsEnabled()},
+                        (dialog, which, enabled) -> {
+                            if (which == 0) sound.setMusicEnabled(enabled);
+                            else sound.setEffectsEnabled(enabled);
+                            invalidate();
+                        })
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    @Override
+    public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+        super.onInitializeAccessibilityNodeInfo(info);
+        info.addAction(new AccessibilityNodeInfo.AccessibilityAction(R.id.audio_settings_action,
+                getResources().getText(R.string.audio_settings)));
+    }
+
+    @Override
+    public boolean performAccessibilityAction(int action, Bundle args) {
+        if (action == R.id.audio_settings_action) {
+            showAudioSettings();
+            return true;
+        }
+        return super.performAccessibilityAction(action, args);
+    }
+
     private void label(Canvas canvas, String text, float size, int tint, float x, float y,
                        Typeface type, Paint.Align align) {
         color(tint);
@@ -309,6 +363,7 @@ final class GameView extends View {
             case MotionEvent.ACTION_DOWN:
                 actionDown = resultAnnounced && action.contains(frameTouchX, frameTouchY);
                 menuDown = !round.active() && levelMenu.contains(frameTouchX, frameTouchY);
+                audioDown = audioMenu.contains(frameTouchX, frameTouchY);
                 if (!round.started && board.contains(frameTouchX, frameTouchY)) {
                     pointer = id;
                     downX = x;
@@ -331,14 +386,17 @@ final class GameView extends View {
                 if (event.getActionMasked() == MotionEvent.ACTION_UP) {
                     if (actionDown && action.contains(frameTouchX, frameTouchY)) performClick();
                     if (menuDown && levelMenu.contains(frameTouchX, frameTouchY)) chooseLevel();
+                    if (audioDown && audioMenu.contains(frameTouchX, frameTouchY)) showAudioSettings();
                     actionDown = false;
                     menuDown = false;
+                    audioDown = false;
                     invalidate();
                 }
                 if (pointer != -1 && pointer == id) {
                     float dx = x - downX, dy = y - downY;
                     if (!round.started && Math.hypot(dx, dy) >= touchSlop) {
                         round.launch(dx, dy);
+                        sound.launch();
                         lastFrame = System.nanoTime();
                     }
                     pointer = -1;
@@ -351,6 +409,7 @@ final class GameView extends View {
                 aimCount = 0;
                 actionDown = false;
                 menuDown = false;
+                audioDown = false;
                 invalidate();
                 return true;
             default:

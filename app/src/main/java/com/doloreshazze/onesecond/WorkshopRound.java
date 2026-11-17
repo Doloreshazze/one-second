@@ -37,6 +37,10 @@ final class WorkshopRound {
         return action == expected;
     }
 
+    Action actionSince(float previousTime) {
+        return actionTime > previousTime ? action : null;
+    }
+
     float actionAge(float time) {
         return action == null ? 0 : time - actionTime;
     }

@@ -38,6 +38,7 @@ final class FairRound {
     }
 
     boolean has(Action expected) { return action == expected; }
+    Action actionSince(float previousTime) { return actionTime > previousTime ? action : null; }
     float age(float time) { return action == null ? 0 : time - actionTime; }
     float position(float time, float duration) { return action == null ? 0 : smooth(age(time) / duration); }
     boolean leftOpen() { return firstLockAt >= 0; }

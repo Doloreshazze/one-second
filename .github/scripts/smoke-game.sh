@@ -88,3 +88,43 @@ expect_screen 'Вторая секунда'
 adb shell am force-stop com.doloreshazze.onesecond
 adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
 expect_screen 'Вторая секунда'
+
+open_audio_settings() {
+  adb shell input tap 811 293
+  expect_screen 'Настройки звука'
+}
+
+check_audio_option() {
+  local coords
+  coords="$(python3 - "$screen" "$1" "$2" <<'PY'
+import re
+import sys
+from xml.etree import ElementTree as ET
+
+path, name, expected = sys.argv[1:]
+row = next(node for node in ET.parse(path).iter("node") if node.get("text") == name)
+assert row.get("checked") == expected, f"{name}: expected checked={expected}"
+x1, y1, x2, y2 = map(int, re.findall(r"[0-9]+", row.get("bounds")))
+print((x1 + x2) // 2, (y1 + y2) // 2)
+PY
+  )"
+  if [[ "${3:-}" == toggle ]]; then
+    local x y
+    read -r x y <<< "$coords"
+    adb shell input tap "$x" "$y"
+    expect_screen 'Настройки звука'
+  fi
+}
+
+open_audio_settings
+check_audio_option 'Музыка' true toggle
+check_audio_option 'Звуки' true
+check_audio_option 'Звуки' true toggle
+adb shell input keyevent KEYCODE_BACK
+adb shell am force-stop com.doloreshazze.onesecond
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+expect_screen 'Вторая секунда'
+open_audio_settings
+check_audio_option 'Музыка' false toggle
+check_audio_option 'Звуки' false
+echo 'Verified: separate music and effects settings persist'

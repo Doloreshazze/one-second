@@ -193,6 +193,10 @@ final class PuzzleRound {
         return lerp(CUSHION_START_X, VASE_X, easeOut((time - cushionHitAt) / .29f));
     }
 
+    boolean cushionHitSince(float previousTime) {
+        return cushionHitAt > previousTime;
+    }
+
     float vaseY() {
         if (event == Outcome.VASE_SAVED) {
             float bounce = (float) Math.sin(easeOut(effectAge() / .23f) * Math.PI);
