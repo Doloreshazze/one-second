@@ -34,7 +34,7 @@ final class VerifyShots {
         add(script, byLevel, Level.CAT, Outcome.CAT_AWAKE, "advance");
         add(script, byLevel, Level.CAT, Outcome.FISH_SAVED, "advance");
         add(script, byLevel, Level.DROP, Outcome.INK_BLOT, "advance");
-        add(script, byLevel, Level.DROP, Outcome.DROP_CAUGHT, "drop-again");
+        add(script, byLevel, Level.DROP, Outcome.DROP_CAUGHT, "replay-3");
         add(script, byLevel, Level.DROP, Outcome.PAPER_SAVED, "advance");
         add(script, byLevel, Level.KEY, Outcome.KEY_LOST, "advance");
         add(script, byLevel, Level.KEY, Outcome.KEY_SAVED, "advance");
@@ -47,7 +47,25 @@ final class VerifyShots {
         add(script, byLevel, Level.PHOTO, Outcome.PHOTO_MISSED, "advance");
         add(script, byLevel, Level.PHOTO, Outcome.PHOTO_TAKEN, "advance");
         add(script, byLevel, Level.CLOCK, Outcome.CLOCK_JAMMED, "advance");
-        add(script, byLevel, Level.CLOCK, Outcome.CLOCK_STARTED, "restart");
+        add(script, byLevel, Level.CLOCK, Outcome.CLOCK_STARTED, "advance");
+        add(script, byLevel, Level.WATER, Outcome.BOOT_FILLED, "advance");
+        add(script, byLevel, Level.WATER, Outcome.FLAG_RAISED, "advance");
+        add(script, byLevel, Level.MAGNET, Outcome.CLIPS_CAUGHT, "advance");
+        add(script, byLevel, Level.MAGNET, Outcome.TOKEN_CAUGHT, "advance");
+        add(script, byLevel, Level.SCALE, Outcome.WEIGHT_ADDED, "replay-12");
+        add(script, byLevel, Level.SCALE, Outcome.WEIGHT_REMOVED, "advance");
+        add(script, byLevel, Level.POST, Outcome.PARCEL_IN_HAT, "advance");
+        add(script, byLevel, Level.POST, Outcome.PARCEL_DELIVERED, "advance");
+        add(script, byLevel, Level.THEATRE, Outcome.DRAGON_SHADOW, "replay-14");
+        add(script, byLevel, Level.THEATRE, Outcome.HARE_SHADOW, "advance");
+        add(script, byLevel, Level.LOCKS, Outcome.ONE_TRUMPET, "advance");
+        add(script, byLevel, Level.LOCKS, Outcome.BAND_PLAYED, "advance");
+        add(script, byLevel, Level.MOUSE, Outcome.MOUSE_CUDDLED, "advance");
+        add(script, byLevel, Level.MOUSE, Outcome.CAT_LIT_SIGN, "advance");
+        add(script, byLevel, Level.KITE, Outcome.KITE_FLEW, "advance");
+        add(script, byLevel, Level.CANAL, Outcome.BOAT_DOCKED, "advance");
+        add(script, byLevel, Level.ECHO, Outcome.FAIR_SHUT, "advance");
+        add(script, byLevel, Level.ECHO, Outcome.FAIR_OPEN, "advance");
         Files.write(Path.of(args[0]), script);
     }
 
@@ -55,7 +73,7 @@ final class VerifyShots {
         PuzzleRound round = new PuzzleRound(level);
         double radians = Math.toRadians(angle);
         round.launch((float) Math.cos(radians), (float) Math.sin(radians));
-        for (int frame = 0; frame < 180 && round.active(); frame++) {
+        for (int frame = 0; frame < 200 && round.active(); frame++) {
             round.advance(1f / 60);
         }
         if (round.active() || round.event == null) {

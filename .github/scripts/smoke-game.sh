@@ -42,7 +42,12 @@ tap_action() {
 
 pick_level() {
   adb shell input tap 779 201
-  expect_screen "$1"
+  expect_screen 'Уровни'
+  for page in {1..3}; do
+    if grep -Fq "text=\"$1\"" "$screen"; then break; fi
+    adb shell input swipe 450 1450 450 640 250
+    expect_screen 'Уровни'
+  done
   local x y
   read -r x y < <(python3 - "$screen" "$1" <<'PY'
 import re
@@ -67,18 +72,19 @@ while IFS=$'\t' read -r -u 3 level title outcome result end_x end_y action; do
   adb shell input swipe 300 900 "$end_x" "$end_y" 180
   expect_screen "$result"
   case "$outcome" in
-    drop_caught|paper_saved|photo_taken|train_derailed|clock_started) screenshot "$outcome" ;;
+    drop_caught|paper_saved|photo_taken|clock_started|weight_added|weight_removed|dragon_shadow|hare_shadow|band_played|boat_docked|fair_open)
+      screenshot "$outcome" ;;
   esac
-  if [[ "$action" == drop-again ]]; then
-    pick_level '3. Последняя капля'
+  if [[ "$action" == replay-* ]]; then
+    pick_level "$(cut -d - -f 2 <<< "$action"). $title"
   else
     tap_action
   fi
 done 3< "$2"
 
 expect_screen 'Спаси вазу'
-pick_level '9. Сердце мастерской'
-expect_screen 'Сердце мастерской'
+pick_level '19. Вторая секунда'
+expect_screen 'Вторая секунда'
 adb shell am force-stop com.doloreshazze.onesecond
 adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
-expect_screen 'Сердце мастерской'
+expect_screen 'Вторая секунда'

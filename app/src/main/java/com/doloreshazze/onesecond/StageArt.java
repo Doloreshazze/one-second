@@ -28,6 +28,7 @@ final class StageArt {
     private final Bitmap day, night, marble, vase, cushion, catAsleep, catAwake, bell, bowl, fish, shards;
     private final LivingArt living = new LivingArt();
     private final WorkshopArt workshop;
+    private final FairArt fair;
 
     StageArt(Resources res) {
         day = BitmapFactory.decodeResource(res, R.drawable.stage_day);
@@ -42,11 +43,14 @@ final class StageArt {
         fish = BitmapFactory.decodeResource(res, R.drawable.prop_goldfish);
         shards = BitmapFactory.decodeResource(res, R.drawable.prop_shards);
         workshop = new WorkshopArt(res, this);
+        fair = new FairArt(res, this);
     }
 
     void drawRoom(Canvas canvas, PuzzleRound round, float ambient) {
         color(0xffffffff);
-        if (round.workshop == null) {
+        if (round.fair != null) {
+            fair.background(canvas, round);
+        } else if (round.workshop == null) {
             canvas.drawBitmap(round.level == Level.VASE ? day : night, null, bounds, paint);
         } else {
             workshop.background(canvas, round);
@@ -82,6 +86,7 @@ final class StageArt {
 
         if (round.level == Level.VASE) drawVaseScene(canvas, round, ambient);
         else if (round.level == Level.CAT) drawCatScene(canvas, round, ambient);
+        else if (round.fair != null) fair.scene(canvas, round, ambient);
         else workshop.scene(canvas, round, ambient);
     }
 

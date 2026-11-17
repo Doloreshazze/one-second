@@ -31,7 +31,7 @@ final class GameView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF board = new RectF(BOARD_X, BOARD_Y, BOARD_X + WIDTH, BOARD_Y + HEIGHT);
     private final RectF action = new RectF(299, 726, 414, 780);
-    private final RectF levelMenu = new RectF(333, 20, 417, 62);
+    private final RectF levelMenu = new RectF(325, 20, 417, 62);
     private final Path boardClip = new Path();
     private final Shader frameLight = new RadialGradient(209, 429, 466,
             0xff34333d, INK, Shader.TileMode.CLAMP);
@@ -98,12 +98,14 @@ final class GameView extends View {
         long now = System.nanoTime();
         if (round.active()) {
             rememberMarble();
+            Outcome before = round.event;
             round.advance(Math.min(.045f, (now - lastFrame) / 1e9f));
             if (round.level == Level.NOTES && sound != null) {
                 while (playedNotes < round.workshop.noteCount()) {
                     sound.play(round.workshop.noteAt(playedNotes++));
                 }
             }
+            if (before == null && round.event != null && sound != null) sound.playEnding(round.event);
         }
         lastFrame = now;
 
@@ -137,7 +139,8 @@ final class GameView extends View {
         }
         if (getWindowVisibility() == VISIBLE) {
             if (round.active()) postInvalidateOnAnimation();
-            else if (!round.started || round.level == Level.VASE || round.level == Level.CAT) {
+            else if (!round.started || round.level == Level.VASE || round.level == Level.CAT
+                    || round.event == Outcome.MOUSE_CUDDLED) {
                 postInvalidateDelayed(40);
             }
         }
@@ -156,8 +159,8 @@ final class GameView extends View {
         paint.setStrokeCap(Paint.Cap.BUTT);
         label(canvas, "ONE SECOND!", 33, PAPER, 63, 52, TITLE, Paint.Align.LEFT);
         color(menuDown ? 0xff685445 : 0xff36363f);
-        canvas.drawRoundRect(335, 26, 413, 55, 14, 14, paint);
-        label(canvas, chapterCount, 15, StageArt.GOLD, 369, 46, LABEL, Paint.Align.CENTER);
+        canvas.drawRoundRect(325, 26, 413, 55, 14, 14, paint);
+        label(canvas, chapterCount, 15, StageArt.GOLD, 361, 46, LABEL, Paint.Align.CENTER);
         color(StageArt.GOLD);
         paint.setStrokeWidth(1.4f);
         canvas.drawLine(392, 38, 397, 43, paint);
@@ -174,9 +177,12 @@ final class GameView extends View {
         canvas.translate(BOARD_X, BOARD_Y);
         float ambient = (timeNanos % 60_000_000_000L) / 1_000_000_000f;
         art.drawRoom(canvas, round, ambient);
-        if (round.active()) drawTrail(canvas);
+        boolean shotVisible = FairArt.finaleProgress(round) < .57f
+                && (round.level != Level.CANAL || !round.fair.has(FairRound.Action.WATER_IMPACT)
+                        || round.fair.age(round.time) < .13f);
+        if (round.active() && shotVisible) drawTrail(canvas);
         if (!round.started) drawAim(canvas);
-        art.drawMarble(canvas, round, (timeNanos % 1_480_000_000L) / 1_480_000_000f);
+        if (shotVisible) art.drawMarble(canvas, round, (timeNanos % 1_480_000_000L) / 1_480_000_000f);
         art.drawImpact(canvas, round);
         timeBadge(canvas);
         canvas.restore();
@@ -197,7 +203,7 @@ final class GameView extends View {
                     + (hundredths % 100) + " с";
         }
         if (round.started && !round.active()) {
-            text = round.won() ? "Спасено" : "Промах";
+            text = round.won() ? (round.fair == null ? "Спасено" : "Готово") : "Промах";
             if (!round.won()) accent = StageArt.CORAL;
         }
         color(0xdf151823);

@@ -10,7 +10,17 @@ final class PuzzleRound {
         TRAIN("Мост в последний момент", "Опусти мост перед поездом", 88, 300),
         NOTES("Три ноты", "Задень пластины по порядку", 70, 294),
         PHOTO("Снимок с котом", "Позвони перед щелчком камеры", 78, 416),
-        CLOCK("Сердце мастерской", "Толкни коромысло под грузом", 78, 354);
+        CLOCK("Сердце мастерской", "Толкни коромысло под грузом", 78, 354),
+        WATER("Водяное колесо", "Направь воду на колесо", 78, 342),
+        MAGNET("Магнитный кран", "Отпусти магнит над жетоном", 81, 370),
+        SCALE("Весы пряничника", "Уравновесь чаши", 80, 379),
+        POST("Посылка на второй этаж", "Выбери жёлоб для посылки", 76, 351),
+        THEATRE("Театр теней", "Поверни зеркало к экрану", 80, 370),
+        LOCKS("Два замка", "Пошли по шару к каждому замку", 78, 330),
+        MOUSE("Кот на педали", "Пусть мышь заманит кота на педаль", 82, 383),
+        KITE("Дракон на нитке", "Отпусти стопор катушки", 79, 335),
+        CANAL("Лодка с огоньком", "Подтолкни лодку волной", 78, 278),
+        ECHO("Вторая секунда", "Открой проход для эха броска", 74, 335);
 
         final String title, objective;
         final float startX, startY;
@@ -43,7 +53,32 @@ final class PuzzleRound {
         PHOTO_TAKEN(true, "Кот в кадре", "Взгляд точно в объектив"),
         PHOTO_MISSED(false, "Кот отвернулся", "Поймай момент перед вспышкой"),
         CLOCK_STARTED(true, "Часы пошли", "В мастерской наступило утро"),
-        CLOCK_JAMMED(false, "Часы замерли", "Подними опору до падения груза");
+        CLOCK_JAMMED(false, "Часы замерли", "Подними опору до падения груза"),
+        FLAG_RAISED(true, "Флаг над двором", "Вода раскрутила колесо"),
+        BOOT_FILLED(false, "Полный сапог", "Поверни развилку до прихода воды"),
+        TOKEN_CAUGHT(true, "Жетон пойман", "Магнит опустился вовремя"),
+        CLIPS_CAUGHT(false, "Усы из скрепок", "Попробуй отпустить магнит позже"),
+        TOKEN_LOST(false, "Жетон укатился", "Попади в защёлку на качелях"),
+        WEIGHT_REMOVED(true, "Грузик снят", "Лавка открылась"),
+        WEIGHT_ADDED(true, "Гирька на чаше", "Лавка открылась"),
+        SCALE_JAMMED(false, "Лавка закрыта", "Сними груз или добавь гирьку"),
+        PARCEL_DELIVERED(true, "Посылка в корзине", "Корзинка подошла к полке"),
+        PARCEL_IN_HAT(false, "Посылка в шляпе", "Длинный жёлоб задержит шар"),
+        DRAGON_SHADOW(true, "Дракон на сцене", "Есть и другая постановка"),
+        HARE_SHADOW(true, "Заяц на сцене", "Есть и другая постановка"),
+        THEATRE_DARK(false, "Экран погас", "Задень один из упоров зеркала"),
+        BAND_PLAYED(true, "Оркестр играет", "Обе защёлки раскрылись"),
+        ONE_TRUMPET(false, "Один трубач", "Открой замки почти одновременно"),
+        CABINET_SHUT(false, "Крышка закрыта", "Задень второй шар по касательной"),
+        CAT_LIT_SIGN(true, "Вывеска горит", "Кот приземлился на педаль"),
+        MOUSE_CUDDLED(false, "Мышь под боком", "Направь мышь к правой дорожке"),
+        CAT_STILL_SLEEPING(false, "Кот ещё спит", "Подтолкни заводную мышь шаром"),
+        KITE_FLEW(true, "Гирлянда в небе", "Змей пролетел над флюгером"),
+        KITE_TANGLED(false, "Нить запуталась", "Успей освободить катушку"),
+        BOAT_DOCKED(true, "Лодка у причала", "Волна вынесла её из течения"),
+        BOAT_SPUN(false, "Водоворот", "Попади в воду слева от лодки"),
+        FAIR_OPEN(true, "Ярмарка открыта", "Один бросок, две секунды"),
+        FAIR_SHUT(false, "Эхо разминулось", "Проведи оба шара через проход");
 
         final boolean won;
         final String title, detail;
@@ -69,7 +104,7 @@ final class PuzzleRound {
     static final float BOWL_REST_Y = 365;
     static final float EFFECT_DURATION = .35f;
 
-    private static final float GRAVITY = 480;
+    static final float GRAVITY = 480;
     private static final float SPEED = 500;
     private static final float CUSHION_TOP = 491;
     private static final float VASE_HALF_HEIGHT = 39;
@@ -78,6 +113,7 @@ final class PuzzleRound {
 
     final Level level;
     final WorkshopRound workshop;
+    final FairRound fair;
     boolean started;
     float time, marbleX, marbleY, eventX, eventY;
     Outcome event;
@@ -90,13 +126,15 @@ final class PuzzleRound {
         this.level = level;
         marbleX = level.startX;
         marbleY = level.startY;
-        workshop = level.ordinal() >= Level.DROP.ordinal() ? new WorkshopRound() : null;
+        fair = level.ordinal() >= Level.WATER.ordinal() ? new FairRound() : null;
+        workshop = level.ordinal() >= Level.DROP.ordinal() && fair == null ? new WorkshopRound() : null;
     }
 
     void launch(float dx, float dy) {
         float scale = SPEED / (float) Math.hypot(dx, dy);
         velocityX = dx * scale;
         velocityY = dy * scale;
+        if (level == Level.ECHO) fair.recordLaunch(velocityX, velocityY);
         started = true;
     }
 
@@ -115,8 +153,12 @@ final class PuzzleRound {
     }
 
     boolean active() {
-        return started && (event == null || effectAge() < (workshop == null
-                ? EFFECT_DURATION : workshop.effectDuration(level)));
+        return started && (event == null || effectAge() < effectDuration());
+    }
+
+    private float effectDuration() {
+        if (fair != null) return fair.effectDuration(level, event);
+        return workshop == null ? EFFECT_DURATION : workshop.effectDuration(level);
     }
 
     boolean won() {
@@ -139,7 +181,8 @@ final class PuzzleRound {
             if (event == null) {
                 if (level == Level.VASE) updateVase();
                 else if (level == Level.CAT) updateBowl();
-                else workshop.update(this);
+                else if (workshop != null) workshop.update(this);
+                else fair.update(this, dt);
             }
             seconds -= dt;
         }
@@ -256,6 +299,17 @@ final class PuzzleRound {
 
     float verticalSpeed() {
         return velocityY;
+    }
+
+    void deflect(float vx, float vy) {
+        velocityX = vx;
+        velocityY = vy;
+    }
+
+    void holdMarble(float x, float y) {
+        marbleX = x;
+        marbleY = y;
+        resting = true;
     }
 
     void reflect(float normalX, float normalY) {
