@@ -1,8 +1,59 @@
 package com.doloreshazze.onesecond;
 
 final class PuzzleRound {
-    enum Level { VASE, CAT }
-    enum Outcome { VASE_SAVED, VASE_BROKEN, FISH_SAVED, CAT_AWAKE, FISH_FELL }
+    enum Level {
+        VASE("Спаси вазу", "Сдвинь подушку под вазу", 89, 290),
+        CAT("Не разбуди кота", "Попади в аквариум мимо звонка", 89, 423),
+        DROP("Последняя капля", "Спаси рисунок от капли", 86, 345),
+        KEY("Ключ под половицей", "Отбей шар от латунной пластины", 80, 340),
+        GLIDER("Бумажный пилот", "Разверни поток под самолётик", 80, 358),
+        TRAIN("Мост в последний момент", "Опусти мост перед поездом", 88, 300),
+        NOTES("Три ноты", "Задень пластины по порядку", 70, 294),
+        PHOTO("Снимок с котом", "Позвони перед щелчком камеры", 78, 416),
+        CLOCK("Сердце мастерской", "Толкни коромысло под грузом", 78, 354);
+
+        final String title, objective;
+        final float startX, startY;
+
+        Level(String title, String objective, float startX, float startY) {
+            this.title = title;
+            this.objective = objective;
+            this.startX = startX;
+            this.startY = startY;
+        }
+    }
+
+    enum Outcome {
+        VASE_SAVED(true, "Ваза спасена", "Мягкая посадка"),
+        VASE_BROKEN(false, "Ваза разбилась", "Задень подушку шаром"),
+        FISH_SAVED(true, "Рыбка спасена", "Кот ничего не заметил"),
+        CAT_AWAKE(false, "Кот проснулся!", "Проведи шар выше звонка"),
+        FISH_FELL(false, "Аквариум упал", "Подтолкни аквариум на полку"),
+        DROP_CAUGHT(true, "Капля в блюдце", "Есть ещё один способ спасти рисунок"),
+        PAPER_SAVED(true, "Рисунок сухой", "Лоток ушёл под полку"),
+        INK_BLOT(false, "Клякса с ушами", "Попробуй блюдце или лоток"),
+        KEY_SAVED(true, "Ключ спасён", "Отскок отправил его на коврик"),
+        KEY_LOST(false, "Ключ у мышки", "Попробуй попасть в пластину снизу"),
+        GLIDER_LANDED(true, "Мягкая посадка", "Ветер донёс самолётик до полки"),
+        GLIDER_WET(false, "Самолётик в чае", "Задень заслонку вентилятора"),
+        TRAIN_CROSSED(true, "Поезд проехал", "Мост встал на место вовремя"),
+        TRAIN_DERAILED(false, "Утка на свободе", "Успей сбить упор под мостом"),
+        NOTES_PLAYED(true, "Мелодия сыграна", "Шкатулка открылась"),
+        NOTES_MISSED(false, "Мелодия оборвалась", "Проведи шар через все три ноты"),
+        PHOTO_TAKEN(true, "Кот в кадре", "Взгляд точно в объектив"),
+        PHOTO_MISSED(false, "Кот отвернулся", "Поймай момент перед вспышкой"),
+        CLOCK_STARTED(true, "Часы пошли", "В мастерской наступило утро"),
+        CLOCK_JAMMED(false, "Часы замерли", "Подними опору до падения груза");
+
+        final boolean won;
+        final String title, detail;
+
+        Outcome(boolean won, String title, String detail) {
+            this.won = won;
+            this.title = title;
+            this.detail = detail;
+        }
+    }
 
     static final float WIDTH = 400;
     static final float HEIGHT = 600;
@@ -26,6 +77,7 @@ final class PuzzleRound {
     private static final float SIM_STEP = 1f / 240;
 
     final Level level;
+    final WorkshopRound workshop;
     boolean started;
     float time, marbleX, marbleY, eventX, eventY;
     Outcome event;
@@ -36,8 +88,9 @@ final class PuzzleRound {
 
     PuzzleRound(Level level) {
         this.level = level;
-        marbleX = 89;
-        marbleY = level == Level.VASE ? 290 : 423;
+        marbleX = level.startX;
+        marbleY = level.startY;
+        workshop = level.ordinal() >= Level.DROP.ordinal() ? new WorkshopRound() : null;
     }
 
     void launch(float dx, float dy) {
@@ -62,11 +115,12 @@ final class PuzzleRound {
     }
 
     boolean active() {
-        return started && (event == null || effectAge() < EFFECT_DURATION);
+        return started && (event == null || effectAge() < (workshop == null
+                ? EFFECT_DURATION : workshop.effectDuration(level)));
     }
 
     boolean won() {
-        return event == Outcome.VASE_SAVED || event == Outcome.FISH_SAVED;
+        return event != null && event.won;
     }
 
     float effectAge() {
@@ -84,7 +138,8 @@ final class PuzzleRound {
             moveMarble(dt);
             if (event == null) {
                 if (level == Level.VASE) updateVase();
-                else updateBowl();
+                else if (level == Level.CAT) updateBowl();
+                else workshop.update(this);
             }
             seconds -= dt;
         }
@@ -182,17 +237,32 @@ final class PuzzleRound {
         }
     }
 
-    private boolean touches(float cx, float cy, float rx, float ry) {
+    boolean touches(float cx, float cy, float rx, float ry) {
         float dx = (marbleX - cx) / rx;
         float dy = (marbleY - cy) / ry;
         return dx * dx + dy * dy < 1;
     }
 
-    private void finish(Outcome outcome, float x, float y) {
+    void finish(Outcome outcome, float x, float y) {
         event = outcome;
         eventAt = time;
         eventX = x;
         eventY = y;
+    }
+
+    float horizontalSpeed() {
+        return velocityX;
+    }
+
+    float verticalSpeed() {
+        return velocityY;
+    }
+
+    void reflect(float normalX, float normalY) {
+        float projection = velocityX * normalX + velocityY * normalY;
+        if (projection <= 0) return;
+        velocityX -= 2 * projection * normalX;
+        velocityY -= 2 * projection * normalY;
     }
 
     static float clamp(float value) {

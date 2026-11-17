@@ -2,6 +2,7 @@
 set -euo pipefail
 
 mkdir -p artifacts/screenshots
+screen=artifacts/screen.xml
 adb shell wm size 900x1900
 adb shell wm density 320
 adb shell input keyevent KEYCODE_WAKEUP
@@ -17,6 +18,7 @@ expect_screen() {
       xml="$(adb shell cat /sdcard/one-second-screen.xml)"
       if [[ "$xml" == *"$title"* ]]; then
         echo "Verified: $title"
+        echo "$xml" > "$screen"
         return
       fi
     fi
@@ -38,25 +40,44 @@ tap_action() {
   adb shell input tap 739 1662
 }
 
+pick_level() {
+  adb shell input tap 779 201
+  expect_screen "$1"
+  local x y
+  read -r x y < <(python3 - "$screen" "$1" <<'PY'
+import re
+import sys
+from xml.etree import ElementTree as ET
+
+root = ET.parse(sys.argv[1])
+row = next(node for node in root.iter("node") if node.get("text") == sys.argv[2])
+x1, y1, x2, y2 = map(int, re.findall(r"[0-9]+", row.get("bounds")))
+print((x1 + x2) // 2, (y1 + y2) // 2)
+PY
+  )
+  adb shell input tap "$x" "$y"
+}
+
+while IFS=$'\t' read -r level title outcome result end_x end_y action; do
+  expect_screen "$title"
+  if [[ ! -s "artifacts/screenshots/$level.png" ]]; then
+    screenshot "$level"
+  fi
+  adb shell input swipe 300 900 "$end_x" "$end_y" 180
+  expect_screen "$result"
+  case "$outcome" in
+    drop_caught|paper_saved|photo_taken|train_derailed|clock_started) screenshot "$outcome" ;;
+  esac
+  if [[ "$action" == drop-again ]]; then
+    pick_level '3. Последняя капля'
+  else
+    tap_action
+  fi
+done < "$2"
+
 expect_screen 'Спаси вазу'
-screenshot vase
-adb shell input swipe 300 900 300 1060 180
-expect_screen 'Ваза разбилась'
-tap_action
-expect_screen 'Спаси вазу'
-adb shell input swipe 300 900 400 1038 180
-expect_screen 'Ваза спасена'
-screenshot vase-saved
-tap_action
-expect_screen 'Не разбуди кота'
-screenshot cat
-adb shell input swipe 300 1000 440 1000 180
-expect_screen 'Кот проснулся!'
-screenshot cat-awake
-tap_action
-expect_screen 'Не разбуди кота'
-adb shell input swipe 300 1000 440 902 180
-expect_screen 'Рыбка спасена'
-screenshot fish-saved
-tap_action
-expect_screen 'Спаси вазу'
+pick_level '9. Сердце мастерской'
+expect_screen 'Сердце мастерской'
+adb shell am force-stop com.doloreshazze.onesecond
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+expect_screen 'Сердце мастерской'

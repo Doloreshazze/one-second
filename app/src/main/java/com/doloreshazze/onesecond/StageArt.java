@@ -26,6 +26,8 @@ final class StageArt {
             0x79081015, 0x00081015, Shader.TileMode.CLAMP);
 
     private final Bitmap day, night, marble, vase, cushion, catAsleep, catAwake, bell, bowl, fish, shards;
+    private final LivingArt living = new LivingArt();
+    private final WorkshopArt workshop;
 
     StageArt(Resources res) {
         day = BitmapFactory.decodeResource(res, R.drawable.stage_day);
@@ -39,11 +41,16 @@ final class StageArt {
         bowl = BitmapFactory.decodeResource(res, R.drawable.prop_bowl);
         fish = BitmapFactory.decodeResource(res, R.drawable.prop_goldfish);
         shards = BitmapFactory.decodeResource(res, R.drawable.prop_shards);
+        workshop = new WorkshopArt(res, this);
     }
 
-    void drawRoom(Canvas canvas, PuzzleRound round) {
+    void drawRoom(Canvas canvas, PuzzleRound round, float ambient) {
         color(0xffffffff);
-        canvas.drawBitmap(round.level == Level.VASE ? day : night, null, bounds, paint);
+        if (round.workshop == null) {
+            canvas.drawBitmap(round.level == Level.VASE ? day : night, null, bounds, paint);
+        } else {
+            workshop.background(canvas, round);
+        }
         paint.setShader(windowShade);
         canvas.drawRect(bounds, paint);
         paint.setShader(null);
@@ -73,14 +80,15 @@ final class StageArt {
             canvas.drawCircle(x, y, .7f + (i % 4) * .45f, paint);
         }
 
-        if (round.level == Level.VASE) drawVaseScene(canvas, round);
-        else drawCatScene(canvas, round);
+        if (round.level == Level.VASE) drawVaseScene(canvas, round, ambient);
+        else if (round.level == Level.CAT) drawCatScene(canvas, round, ambient);
+        else workshop.scene(canvas, round, ambient);
     }
 
-    private void drawVaseScene(Canvas canvas, PuzzleRound round) {
+    private void drawVaseScene(Canvas canvas, PuzzleRound round, float ambient) {
         shelf(canvas, 344, 293, 68, false);
         shadow(canvas, 99, 534, 63, 13);
-        anchoredSprite(canvas, catAsleep, 99, 532, 118);
+        drawCat(canvas, false, 99, 532, 118, ambient);
         shadow(canvas, round.cushionX(), 539, 73, 13);
         float squash = round.event == Outcome.VASE_SAVED
                 ? (float) Math.sin(clamp(round.effectAge() / .24f) * Math.PI) * 9 : 0;
@@ -96,7 +104,7 @@ final class StageArt {
         }
     }
 
-    private void drawCatScene(Canvas canvas, PuzzleRound round) {
+    private void drawCatScene(Canvas canvas, PuzzleRound round, float ambient) {
         shelf(canvas, 338, 402, 75, true);
         shadow(canvas, 96, 538, 72, 18);
         color(0xff43305c);
@@ -108,7 +116,7 @@ final class StageArt {
         paint.setStyle(Paint.Style.FILL);
 
         boolean startled = round.event == Outcome.CAT_AWAKE;
-        anchoredSprite(canvas, startled ? catAwake : catAsleep, 96, 532, startled ? 126 : 122);
+        drawCat(canvas, startled, 96, 532, startled ? 126 : 122, ambient);
         book(canvas, 166, 469, 86, 15, 0xff56385d);
         book(canvas, 173, 455, 69, 15, 0xff845664);
         float shake = startled
@@ -124,8 +132,17 @@ final class StageArt {
             sprite(canvas, fish, 269, FLOOR - 16, 38, -11);
         } else {
             if (!round.started) focus(canvas, round.bowlX(), round.bowlY(), 47, ICE);
-            sprite(canvas, bowl, round.bowlX(), round.bowlY(), 78, round.bowlAngle());
+            living.aquarium(canvas, bowl, round.bowlX(), round.bowlY(), 78, round.bowlAngle(), ambient);
         }
+    }
+
+    void drawCat(Canvas canvas, boolean awake, float x, float bottom, float width, float ambient) {
+        if (awake) anchoredSprite(canvas, catAwake, x, bottom, width);
+        else living.sleep(canvas, catAsleep, x, bottom, width, ambient);
+    }
+
+    void drawBell(Canvas canvas, float x, float y, float width, float angle) {
+        sprite(canvas, bell, x, y, width, angle);
     }
 
     void drawMarble(Canvas canvas, PuzzleRound round, float pulse) {
@@ -140,7 +157,7 @@ final class StageArt {
             paint.setStyle(Paint.Style.FILL);
         }
         shadow(canvas, round.marbleX + 2, round.marbleY + 12, 24, 15);
-        float turn = round.started ? (round.marbleX - 89) * 1.3f : 0;
+        float turn = round.started ? (round.marbleX - round.level.startX) * 1.3f : 0;
         sprite(canvas, marble, round.marbleX, round.marbleY, MARBLE_RADIUS * 2.1f, turn);
     }
 
@@ -168,7 +185,7 @@ final class StageArt {
         }
     }
 
-    private void focus(Canvas canvas, float x, float y, float radius, int tint) {
+    void focus(Canvas canvas, float x, float y, float radius, int tint) {
         color(alpha(tint, 144));
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.25f);
@@ -178,7 +195,7 @@ final class StageArt {
         diamond(canvas, x + radius * .78f, y - radius * .71f, 3.7f);
     }
 
-    private void shelf(Canvas canvas, float x, float y, float width, boolean dark) {
+    void shelf(Canvas canvas, float x, float y, float width, boolean dark) {
         color(dark ? 0xff32263a : 0xff3a2820);
         shape.reset();
         shape.moveTo(x + 17, y + 10);
@@ -205,19 +222,19 @@ final class StageArt {
         canvas.drawLine(x + 9, y + 7, x + width - 5, y + 7, paint);
     }
 
-    private void shadow(Canvas canvas, float x, float y, float rx, float ry) {
+    void shadow(Canvas canvas, float x, float y, float rx, float ry) {
         color(0x31060610);
         canvas.drawOval(x - rx, y - ry, x + rx, y + ry, paint);
         color(0x42080611);
         canvas.drawOval(x - rx * .82f, y - ry * .7f, x + rx * .82f, y + ry * .7f, paint);
     }
 
-    private void anchoredSprite(Canvas canvas, Bitmap bitmap, float x, float bottom, float width) {
+    void anchoredSprite(Canvas canvas, Bitmap bitmap, float x, float bottom, float width) {
         float height = width * bitmap.getHeight() / bitmap.getWidth();
         sprite(canvas, bitmap, x, bottom - height / 2, width, height, 0);
     }
 
-    private void sprite(Canvas canvas, Bitmap bitmap, float x, float y, float width, float angle) {
+    void sprite(Canvas canvas, Bitmap bitmap, float x, float y, float width, float angle) {
         sprite(canvas, bitmap, x, y, width, width * bitmap.getHeight() / bitmap.getWidth(), angle);
     }
 

@@ -32,8 +32,9 @@ jobs:
           test_dir="$(mktemp -d)"
           javac -encoding UTF-8 -d "$test_dir" \
             app/src/main/java/com/doloreshazze/onesecond/PuzzleRound.java \
+            app/src/main/java/com/doloreshazze/onesecond/WorkshopRound.java \
             .github/scripts/VerifyShots.java
-          java -cp "$test_dir" com.doloreshazze.onesecond.VerifyShots
+          java -cp "$test_dir" com.doloreshazze.onesecond.VerifyShots smoke-shots.tsv
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
       - name: Verify and name the APK
@@ -47,8 +48,15 @@ jobs:
           name: one-second-debug-apk
           path: OneSecond-debug.apk
           if-no-files-found: error
+      - name: Upload emulator inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: one-second-smoke-inputs
+          path: smoke-shots.tsv
+          if-no-files-found: error
+          retention-days: 2
   smoke:
-    name: Play both levels on Android 35
+    name: Play all nine levels on Android 35
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 14
@@ -61,6 +69,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: one-second-debug-apk
+          path: artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: one-second-smoke-inputs
           path: artifacts
       - name: Enable KVM
         run: |
@@ -75,7 +87,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          script: bash .github/scripts/smoke-game.sh artifacts/OneSecond-debug.apk
+          script: bash .github/scripts/smoke-game.sh artifacts/OneSecond-debug.apk artifacts/smoke-shots.tsv
       - name: Upload gameplay screenshots
         uses: actions/upload-artifact@v4
         with:

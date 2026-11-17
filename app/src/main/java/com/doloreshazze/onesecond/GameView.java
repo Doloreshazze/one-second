@@ -1,6 +1,8 @@
 package com.doloreshazze.onesecond;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -15,6 +17,7 @@ import android.view.ViewConfiguration;
 import static com.doloreshazze.onesecond.PuzzleRound.*;
 
 final class GameView extends View {
+    private static final Level[] LEVELS = Level.values();
     private static final int INK = 0xff151922;
     private static final int PAPER = 0xffffeed9;
     private static final int MUTED = 0xffc5b6b4;
@@ -28,41 +31,65 @@ final class GameView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF board = new RectF(BOARD_X, BOARD_Y, BOARD_X + WIDTH, BOARD_Y + HEIGHT);
     private final RectF action = new RectF(299, 726, 414, 780);
+    private final RectF levelMenu = new RectF(333, 20, 417, 62);
     private final Path boardClip = new Path();
     private final Shader frameLight = new RadialGradient(209, 429, 466,
             0xff34333d, INK, Shader.TileMode.CLAMP);
     private final StageArt art;
+    private final SharedPreferences progress;
     private final float touchSlop;
     private final float[] aimPoints = new float[24];
     private final float[] trailX = new float[12];
     private final float[] trailY = new float[12];
 
     private PuzzleRound round;
+    private WorkshopSound sound;
     private float scale = 1, frameX, frameY;
     private float downX, downY;
-    private int pointer = -1, aimCount, trailCount;
-    private boolean actionDown, resultAnnounced;
+    private int pointer = -1, aimCount, trailCount, playedNotes, unlocked;
+    private boolean actionDown, menuDown, resultAnnounced;
+    private String chapterCount;
     private long lastFrame;
 
     GameView(Context context) {
         super(context);
         art = new StageArt(getResources());
+        progress = context.getSharedPreferences("workshop_progress", Context.MODE_PRIVATE);
+        unlocked = Math.max(0, Math.min(LEVELS.length - 1, progress.getInt("unlocked", 0)));
         touchSlop = Math.max(ViewConfiguration.get(context).getScaledTouchSlop(),
                 14 * getResources().getDisplayMetrics().density);
         boardClip.addRoundRect(board, 22, 22, Path.Direction.CW);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
-        reset(Level.VASE);
+        reset(LEVELS[Math.max(0, Math.min(unlocked, progress.getInt("current", 0)))]);
     }
 
     private void reset(Level level) {
         round = new PuzzleRound(level);
+        progress.edit().putInt("current", level.ordinal()).apply();
+        chapterCount = (level.ordinal() + 1) + " / " + LEVELS.length;
         aimCount = 0;
         trailCount = 0;
+        playedNotes = 0;
         resultAnnounced = false;
         setClickable(false);
-        setContentDescription(levelTitle() + ". " + objective()
+        setContentDescription(level.title + ". " + level.objective
                 + ". Сделай свайп, чтобы бросить шар.");
         invalidate();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        sound = new WorkshopSound(getContext());
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (sound != null) {
+            sound.release();
+            sound = null;
+        }
+        super.onDetachedFromWindow();
     }
 
     @Override
@@ -72,6 +99,11 @@ final class GameView extends View {
         if (round.active()) {
             rememberMarble();
             round.advance(Math.min(.045f, (now - lastFrame) / 1e9f));
+            if (round.level == Level.NOTES && sound != null) {
+                while (playedNotes < round.workshop.noteCount()) {
+                    sound.play(round.workshop.noteAt(playedNotes++));
+                }
+            }
         }
         lastFrame = now;
 
@@ -95,12 +127,19 @@ final class GameView extends View {
         footer(canvas);
         canvas.restore();
 
-        if (round.active()) postInvalidateOnAnimation();
-        else if (!round.started) postInvalidateDelayed(32);
-        else if (!resultAnnounced) {
+        if (round.started && !round.active() && !resultAnnounced) {
             resultAnnounced = true;
             setClickable(true);
-            setContentDescription(resultTitle() + ". " + actionLabel() + ".");
+            setContentDescription(round.event.title + ". " + actionLabel() + ".");
+            if (round.won() && round.level.ordinal() == unlocked && unlocked < LEVELS.length - 1) {
+                progress.edit().putInt("unlocked", ++unlocked).apply();
+            }
+        }
+        if (getWindowVisibility() == VISIBLE) {
+            if (round.active()) postInvalidateOnAnimation();
+            else if (!round.started || round.level == Level.VASE || round.level == Level.CAT) {
+                postInvalidateDelayed(40);
+            }
         }
     }
 
@@ -116,11 +155,14 @@ final class GameView extends View {
         canvas.drawLine(33.5f, 28, 38.5f, 28, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
         label(canvas, "ONE SECOND!", 33, PAPER, 63, 52, TITLE, Paint.Align.LEFT);
-        color(0xff36363f);
+        color(menuDown ? 0xff685445 : 0xff36363f);
         canvas.drawRoundRect(335, 26, 413, 55, 14, 14, paint);
-        label(canvas, round.level == Level.VASE ? "1 / 2" : "2 / 2",
-                15, StageArt.GOLD, 374, 46, LABEL, Paint.Align.CENTER);
-        label(canvas, levelTitle(), 24, PAPER, 20, 91, LABEL, Paint.Align.LEFT);
+        label(canvas, chapterCount, 15, StageArt.GOLD, 369, 46, LABEL, Paint.Align.CENTER);
+        color(StageArt.GOLD);
+        paint.setStrokeWidth(1.4f);
+        canvas.drawLine(392, 38, 397, 43, paint);
+        canvas.drawLine(397, 43, 402, 38, paint);
+        label(canvas, round.level.title, 24, PAPER, 20, 91, LABEL, Paint.Align.LEFT);
     }
 
     private void stage(Canvas canvas, long timeNanos) {
@@ -130,7 +172,8 @@ final class GameView extends View {
         canvas.save();
         canvas.clipPath(boardClip);
         canvas.translate(BOARD_X, BOARD_Y);
-        art.drawRoom(canvas, round);
+        float ambient = (timeNanos % 60_000_000_000L) / 1_000_000_000f;
+        art.drawRoom(canvas, round, ambient);
         if (round.active()) drawTrail(canvas);
         if (!round.started) drawAim(canvas);
         art.drawMarble(canvas, round, (timeNanos % 1_480_000_000L) / 1_480_000_000f);
@@ -193,9 +236,9 @@ final class GameView extends View {
 
     private void footer(Canvas canvas) {
         if (round.started && !round.active()) {
-            label(canvas, resultTitle(), 21, round.won() ? StageArt.GOLD : StageArt.CORAL,
+            label(canvas, round.event.title, 21, round.won() ? StageArt.GOLD : StageArt.CORAL,
                     20, 753, TITLE, Paint.Align.LEFT);
-            label(canvas, resultDetail(), 13, MUTED, 20, 776, LABEL, Paint.Align.LEFT);
+            label(canvas, round.event.detail, 13, MUTED, 20, 776, LABEL, Paint.Align.LEFT);
             color(actionDown ? 0xffe6ae65 : StageArt.GOLD);
             canvas.drawRoundRect(action, 17, 17, paint);
             label(canvas, actionLabel(),
@@ -212,42 +255,25 @@ final class GameView extends View {
         canvas.drawLine(52, 745, 52, 755, paint);
         canvas.drawLine(52, 745, 42, 745, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
-        label(canvas, objective(), 18, PAPER, 81, 751, LABEL, Paint.Align.LEFT);
+        label(canvas, round.level.objective, 18, PAPER, 81, 751, LABEL, Paint.Align.LEFT);
         label(canvas, round.started ? "Смотри, что произойдёт" : "Задай направление одним свайпом",
                 13, MUTED, 81, 773, LABEL, Paint.Align.LEFT);
     }
 
-    private String levelTitle() {
-        return round.level == Level.VASE ? "Спаси вазу" : "Не разбуди кота";
-    }
-
-    private String objective() {
-        return round.level == Level.VASE ? "Сдвинь подушку под вазу" : "Попади в аквариум мимо звонка";
-    }
-
-    private String resultTitle() {
-        switch (round.event) {
-            case VASE_SAVED: return "Ваза спасена";
-            case VASE_BROKEN: return "Ваза разбилась";
-            case FISH_SAVED: return "Рыбка спасена";
-            case CAT_AWAKE: return "Кот проснулся!";
-            default: return "Аквариум упал";
-        }
-    }
-
-    private String resultDetail() {
-        switch (round.event) {
-            case VASE_SAVED: return "Мягкая посадка";
-            case VASE_BROKEN: return "Задень подушку шаром";
-            case FISH_SAVED: return "Кот ничего не заметил";
-            case CAT_AWAKE: return "Проведи шар выше звонка";
-            default: return "Подтолкни аквариум на полку";
-        }
-    }
-
     private String actionLabel() {
         if (!round.won()) return "Ещё раз";
-        return round.level == Level.VASE ? "Дальше" : "Сначала";
+        return round.level.ordinal() < LEVELS.length - 1 ? "Дальше" : "Сначала";
+    }
+
+    private void chooseLevel() {
+        String[] titles = new String[unlocked + 1];
+        for (int i = 0; i < titles.length; i++) {
+            titles[i] = (i + 1) + ". " + LEVELS[i].title;
+        }
+        new AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Dialog_Alert)
+                .setTitle("Уровни")
+                .setItems(titles, (dialog, which) -> reset(LEVELS[which]))
+                .show();
     }
 
     private void label(Canvas canvas, String text, float size, int tint, float x, float y,
@@ -276,6 +302,7 @@ final class GameView extends View {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 actionDown = resultAnnounced && action.contains(frameTouchX, frameTouchY);
+                menuDown = !round.active() && levelMenu.contains(frameTouchX, frameTouchY);
                 if (!round.started && board.contains(frameTouchX, frameTouchY)) {
                     pointer = id;
                     downX = x;
@@ -297,7 +324,9 @@ final class GameView extends View {
             case MotionEvent.ACTION_POINTER_UP:
                 if (event.getActionMasked() == MotionEvent.ACTION_UP) {
                     if (actionDown && action.contains(frameTouchX, frameTouchY)) performClick();
+                    if (menuDown && levelMenu.contains(frameTouchX, frameTouchY)) chooseLevel();
                     actionDown = false;
+                    menuDown = false;
                     invalidate();
                 }
                 if (pointer != -1 && pointer == id) {
@@ -315,6 +344,7 @@ final class GameView extends View {
                 pointer = -1;
                 aimCount = 0;
                 actionDown = false;
+                menuDown = false;
                 invalidate();
                 return true;
             default:
@@ -326,7 +356,8 @@ final class GameView extends View {
     public boolean performClick() {
         super.performClick();
         if (resultAnnounced) {
-            reset(round.won() ? (round.level == Level.VASE ? Level.CAT : Level.VASE) : round.level);
+            int next = (round.level.ordinal() + 1) % LEVELS.length;
+            reset(round.won() ? LEVELS[next] : round.level);
         }
         return true;
     }
