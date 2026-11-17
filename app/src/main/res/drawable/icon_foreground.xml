@@ -1,0 +1,3 @@
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:inset="24%">
+    <bitmap android:src="@drawable/prop_marble" android:gravity="fill" android:filter="true" />
+</inset>
