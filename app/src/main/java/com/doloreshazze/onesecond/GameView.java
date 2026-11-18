@@ -307,17 +307,7 @@ final class GameView extends View {
     }
 
     private void showAudioSettings() {
-        new AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Dialog_Alert)
-                .setTitle(R.string.audio_settings)
-                .setMultiChoiceItems(R.array.audio_options,
-                        new boolean[] {sound.musicEnabled(), sound.effectsEnabled()},
-                        (dialog, which, enabled) -> {
-                            if (which == 0) sound.setMusicEnabled(enabled);
-                            else sound.setEffectsEnabled(enabled);
-                            invalidate();
-                        })
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+        new AudioSettingsDialog(getContext(), sound, this::invalidate).show();
     }
 
     @Override

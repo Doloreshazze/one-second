@@ -27,6 +27,11 @@ final class VerifyShots {
         expect(byLevel, Level.VASE, 54, Outcome.VASE_SAVED);
         expect(byLevel, Level.CAT, -35, Outcome.FISH_SAVED);
         expect(byLevel, Level.CAT, -90, Outcome.FISH_FELL);
+        // Direct shots at the brass latch should work across a comfortable range of angles.
+        for (int angle = -24; angle <= -4; angle++) {
+            expect(byLevel, Level.MAGNET, angle, Outcome.TOKEN_CAUGHT);
+        }
+        expect(byLevel, Level.MAGNET, -90, Outcome.TOKEN_LOST);
 
         List<String> script = new ArrayList<>();
         add(script, byLevel, Level.VASE, Outcome.VASE_BROKEN, "advance");

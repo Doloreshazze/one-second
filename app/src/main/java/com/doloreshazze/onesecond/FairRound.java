@@ -23,6 +23,7 @@ final class FairRound {
     static final float CANAL_Y = 441, DOCK_X = 313;
     static final float GATE_X = 193, GATE_Y = 351, ECHO_LOCK_X = 303, ECHO_LOCK_Y = 382;
     static final float ECHO_DELAY = .50f;
+    private static final float MAGNET_DROP_TIME = .24f;
 
     private Action action;
     private float actionTime;
@@ -89,10 +90,12 @@ final class FairRound {
         if (action == null && r.time < .74f && r.touches(MAGNET_LEVER_X, MAGNET_LEVER_Y, 41, 32)) {
             trigger(Action.MAGNET_RELEASE, r);
         }
-        if (has(Action.MAGNET_RELEASE) && age(r.time) >= .24f) {
+        if (has(Action.MAGNET_RELEASE) && age(r.time) >= MAGNET_DROP_TIME) {
             float x = magnetX(r.time);
-            if (Math.abs(x - tokenX(r.time)) <= 37) r.finish(Outcome.TOKEN_CAUGHT, x, BELT_Y);
-            else if (Math.abs(x - clipsX(r.time)) <= 43) r.finish(Outcome.CLIPS_CAUGHT, x, BELT_Y);
+            float tokenDistance = Math.abs(x - tokenX(r.time));
+            float clipsDistance = Math.abs(x - clipsX(r.time));
+            if (tokenDistance <= Math.min(37, clipsDistance)) r.finish(Outcome.TOKEN_CAUGHT, x, BELT_Y);
+            else if (clipsDistance <= 43) r.finish(Outcome.CLIPS_CAUGHT, x, BELT_Y);
             else r.finish(Outcome.TOKEN_LOST, x, BELT_Y);
         } else if (r.time >= 1.02f) {
             r.finish(Outcome.TOKEN_LOST, tokenX(r.time), BELT_Y);
@@ -101,15 +104,15 @@ final class FairRound {
 
     float magnetX(float time) {
         if (!has(Action.MAGNET_RELEASE)) return swingingX(time);
-        return swingingX(actionTime) + 60 * Math.min(.24f, age(time));
+        return swingingX(actionTime) + 30 * position(time, MAGNET_DROP_TIME);
     }
 
     float magnetY(float time) {
         if (!has(Action.MAGNET_RELEASE)) return swingingY(time);
-        return lerp(swingingY(actionTime), BELT_Y - 48, position(time, .24f));
+        return lerp(swingingY(actionTime), BELT_Y - 48, position(time, MAGNET_DROP_TIME));
     }
 
-    private static float swingingX(float time) { return 162 + 156 * clamp(time / .61f); }
+    private static float swingingX(float time) { return lerp(162, 248, smooth(time / .30f)); }
     private static float swingingY(float time) { return 203 + 49 * arc(clamp(time / .75f)); }
     float tokenX(float time) { return Math.min(377, 248 + 67 * time); }
     float clipsX(float time) { return Math.min(331, tokenX(time) - 56); }

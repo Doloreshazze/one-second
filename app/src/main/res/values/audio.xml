@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="audio_settings">Настройки звука</string>
+    <string name="audio_music">Музыка</string>
+    <string name="audio_effects">Звуки</string>
+    <string name="audio_done">Готово</string>
     <item type="id" name="audio_settings_action" />
-    <string-array name="audio_options">
-        <item>Музыка</item>
-        <item>Звуки</item>
-    </string-array>
 </resources>
