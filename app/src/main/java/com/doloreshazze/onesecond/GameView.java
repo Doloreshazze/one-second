@@ -11,6 +11,12 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextDirectionHeuristics;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.util.LruCache;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -54,6 +60,8 @@ final class GameView extends View {
     private boolean actionDown, menuDown, audioDown, resultAnnounced;
     private String chapterCount;
     private long lastFrame;
+    private boolean paused;
+    private final LruCache<String, StaticLayout> textLayouts = new LruCache<>(160);
 
     GameView(Context context, WorkshopSound sound) {
         super(context);
@@ -86,8 +94,9 @@ final class GameView extends View {
         playedNotes = 0;
         resultAnnounced = false;
         setClickable(false);
-        setContentDescription(level.title + ". " + level.objective
-                + ". Сделай свайп, чтобы бросить шар.");
+        setContentDescription(getContext().getString(R.string.level_description,
+                GameText.title(getContext(), level), GameText.objective(getContext(), level),
+                getContext().getString(R.string.access_instruction)));
         invalidate();
     }
 
@@ -95,7 +104,7 @@ final class GameView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         long now = System.nanoTime();
-        if (round.active()) {
+        if (round.active() && !paused) {
             rememberMarble();
             float previousTime = round.time;
             Outcome before = round.event;
@@ -133,12 +142,13 @@ final class GameView extends View {
             resultAnnounced = true;
             sound.finishShot();
             setClickable(true);
-            setContentDescription(round.event.title + ". " + actionLabel() + ".");
+            setContentDescription(getContext().getString(R.string.result_description,
+                    GameText.title(getContext(), round.event), actionLabel()));
             if (round.won() && round.level.ordinal() == unlocked && unlocked < LEVELS.length - 1) {
                 progress.edit().putInt("unlocked", ++unlocked).apply();
             }
         }
-        if (getWindowVisibility() == VISIBLE) {
+        if (getWindowVisibility() == VISIBLE && !paused) {
             if (round.active()) postInvalidateOnAnimation();
             else if (!round.started || round.level == Level.VASE || round.level == Level.CAT
                     || round.event == Outcome.MOUSE_CUDDLED) {
@@ -158,7 +168,7 @@ final class GameView extends View {
         canvas.drawLine(36, 41, 40.8f, 36.5f, paint);
         canvas.drawLine(33.5f, 28, 38.5f, 28, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
-        label(canvas, "ONE SECOND!", 33, PAPER, 63, 52, TITLE, Paint.Align.LEFT);
+        label(canvas, getContext().getString(R.string.app_name), 33, PAPER, 63, 52, TITLE, Paint.Align.LEFT);
         color(menuDown ? 0xff685445 : 0xff36363f);
         canvas.drawRoundRect(325, 26, 413, 55, 14, 14, paint);
         label(canvas, chapterCount, 15, StageArt.GOLD, 361, 46, LABEL, Paint.Align.CENTER);
@@ -166,7 +176,7 @@ final class GameView extends View {
         paint.setStrokeWidth(1.4f);
         canvas.drawLine(392, 38, 397, 43, paint);
         canvas.drawLine(397, 43, 402, 38, paint);
-        label(canvas, round.level.title, 24, PAPER, 20, 91, LABEL, Paint.Align.LEFT);
+        label(canvas, GameText.title(getContext(), round.level), 24, PAPER, 20, 91, LABEL, Paint.Align.LEFT);
         drawAudioButton(canvas);
     }
 
@@ -220,14 +230,13 @@ final class GameView extends View {
 
     private void timeBadge(Canvas canvas) {
         int accent = !round.started ? StageArt.ICE : StageArt.GOLD;
-        String text = "Время замерло";
+        String text = getContext().getString(R.string.time_frozen);
         if (round.started && round.active()) {
-            int hundredths = (int) (round.motionTime() * 100);
-            text = (hundredths / 100) + "," + (hundredths % 100 < 10 ? "0" : "")
-                    + (hundredths % 100) + " с";
+            text = getContext().getString(R.string.time_seconds, round.motionTime());
         }
         if (round.started && !round.active()) {
-            text = round.won() ? (round.fair == null ? "Спасено" : "Готово") : "Промах";
+            text = getContext().getString(round.won()
+                    ? (round.fair == null ? R.string.saved : R.string.done) : R.string.miss);
             if (!round.won()) accent = StageArt.CORAL;
         }
         color(0xdf151823);
@@ -266,9 +275,9 @@ final class GameView extends View {
 
     private void footer(Canvas canvas) {
         if (round.started && !round.active()) {
-            label(canvas, round.event.title, 21, round.won() ? StageArt.GOLD : StageArt.CORAL,
+            label(canvas, GameText.title(getContext(), round.event), 21, round.won() ? StageArt.GOLD : StageArt.CORAL,
                     20, 753, TITLE, Paint.Align.LEFT);
-            label(canvas, round.event.detail, 13, MUTED, 20, 776, LABEL, Paint.Align.LEFT);
+            label(canvas, GameText.detail(getContext(), round.event), 12, MUTED, 20, 767, LABEL, Paint.Align.LEFT);
             color(actionDown ? 0xffe6ae65 : StageArt.GOLD);
             canvas.drawRoundRect(action, 17, 17, paint);
             label(canvas, actionLabel(),
@@ -285,29 +294,34 @@ final class GameView extends View {
         canvas.drawLine(52, 745, 52, 755, paint);
         canvas.drawLine(52, 745, 42, 745, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
-        label(canvas, round.level.objective, 18, PAPER, 81, 751, LABEL, Paint.Align.LEFT);
-        label(canvas, round.started ? "Смотри, что произойдёт" : "Задай направление одним свайпом",
-                13, MUTED, 81, 773, LABEL, Paint.Align.LEFT);
+        label(canvas, GameText.objective(getContext(), round.level), 17, PAPER, 81, 744, LABEL, Paint.Align.LEFT);
+        label(canvas, getContext().getString(round.started ? R.string.watch : R.string.swipe),
+                12, MUTED, 81, 789, LABEL, Paint.Align.LEFT);
     }
 
     private String actionLabel() {
-        if (!round.won()) return "Ещё раз";
-        return round.level.ordinal() < LEVELS.length - 1 ? "Дальше" : "Сначала";
+        if (!round.won()) return getContext().getString(R.string.again);
+        return getContext().getString(round.level.ordinal() < LEVELS.length - 1 ? R.string.next : R.string.restart);
     }
 
     private void chooseLevel() {
         String[] titles = new String[unlocked + 1];
         for (int i = 0; i < titles.length; i++) {
-            titles[i] = (i + 1) + ". " + LEVELS[i].title;
+            titles[i] = getContext().getString(R.string.level_entry, i + 1, GameText.title(getContext(), LEVELS[i]));
         }
+        ((MainActivity) getContext()).setModalVisible(true);
         new AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Dialog_Alert)
-                .setTitle("Уровни")
+                .setTitle(R.string.levels)
                 .setItems(titles, (dialog, which) -> reset(LEVELS[which]))
+                .setOnDismissListener(dialog -> ((MainActivity) getContext()).setModalVisible(false))
                 .show();
     }
 
     private void showAudioSettings() {
-        new AudioSettingsDialog(getContext(), sound, this::invalidate).show();
+        ((MainActivity) getContext()).setModalVisible(true);
+        AudioSettingsDialog dialog = new AudioSettingsDialog(getContext(), sound, this::invalidate);
+        dialog.setOnDismissListener(ignored -> ((MainActivity) getContext()).setModalVisible(false));
+        dialog.show();
     }
 
     @Override
@@ -315,6 +329,8 @@ final class GameView extends View {
         super.onInitializeAccessibilityNodeInfo(info);
         info.addAction(new AccessibilityNodeInfo.AccessibilityAction(R.id.audio_settings_action,
                 getResources().getText(R.string.audio_settings)));
+        info.addAction(new AccessibilityNodeInfo.AccessibilityAction(R.id.levels_action,
+                getResources().getText(R.string.levels)));
     }
 
     @Override
@@ -323,16 +339,54 @@ final class GameView extends View {
             showAudioSettings();
             return true;
         }
+        if (action == R.id.levels_action && !round.active()) {
+            chooseLevel();
+            return true;
+        }
         return super.performAccessibilityAction(action, args);
     }
 
     private void label(Canvas canvas, String text, float size, int tint, float x, float y,
                        Typeface type, Paint.Align align) {
-        color(tint);
-        paint.setTextSize(size);
-        paint.setTypeface(type);
-        paint.setTextAlign(align);
-        canvas.drawText(text, x, y, paint);
+        int maxWidth = align == Paint.Align.CENTER ? (x > 290 ? 101 : 128)
+                : (int) (414 - x);
+        if (x == 20 && y >= 726) maxWidth = 267;
+        if (x == 20 && y == 91) maxWidth = 338;
+        if (x == 63) maxWidth = 252;
+        int lines = (y == 767 || y == 744) ? 2 : 1;
+        String key = text + '|' + size + '|' + tint + '|' + maxWidth + '|' + lines + '|' + type;
+        StaticLayout layout = textLayouts.get(key);
+        if (layout == null) {
+            TextPaint tp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            tp.setColor(tint);
+            tp.setTypeface(type);
+            tp.setTextSize(size);
+            while (tp.getTextSize() > 11 && tp.measureText(text) > maxWidth * lines * .94f) {
+                tp.setTextSize(tp.getTextSize() - .5f);
+            }
+            layout = StaticLayout.Builder.obtain(text, 0, text.length(), tp, maxWidth)
+                    .setAlignment(align == Paint.Align.CENTER ? Layout.Alignment.ALIGN_CENTER : Layout.Alignment.ALIGN_NORMAL)
+                    .setTextDirection(TextDirectionHeuristics.FIRSTSTRONG_LTR)
+                    .setIncludePad(false).setMaxLines(lines)
+                    .setEllipsize(TextUtils.TruncateAt.END).build();
+            textLayouts.put(key, layout);
+        }
+        canvas.save();
+        canvas.translate(align == Paint.Align.CENTER ? x - maxWidth / 2f : x,
+                y - layout.getLineBaseline(0));
+        layout.draw(canvas);
+        canvas.restore();
+    }
+
+    void setPaused(boolean value) {
+        paused = value;
+        pointer = -1;
+        aimCount = 0;
+        actionDown = false;
+        menuDown = false;
+        audioDown = false;
+        lastFrame = System.nanoTime();
+        invalidate();
     }
 
     private void color(int color) {
@@ -342,6 +396,7 @@ final class GameView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (paused) return true;
         int index = event.getActionIndex();
         int id = event.getPointerId(index);
         float x = event.getX(index);
@@ -412,7 +467,9 @@ final class GameView extends View {
         super.performClick();
         if (resultAnnounced) {
             int next = (round.level.ordinal() + 1) % LEVELS.length;
-            reset(round.won() ? LEVELS[next] : round.level);
+            boolean won = round.won();
+            Level target = won ? LEVELS[next] : round.level;
+            reset(target);
         }
         return true;
     }

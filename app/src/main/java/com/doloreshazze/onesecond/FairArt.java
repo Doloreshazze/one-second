@@ -11,6 +11,10 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.util.SparseArray;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextDirectionHeuristics;
+import android.text.TextPaint;
 
 import static com.doloreshazze.onesecond.FairRound.*;
 import static com.doloreshazze.onesecond.PuzzleRound.*;
@@ -23,7 +27,6 @@ final class FairArt {
     private static final int WOOD = 0xff54362d;
     private static final int DARK = 0xff281e28;
     private static final int[] FLAGS = {GOLD, CORAL, ICE, 0xffdbabed};
-    private static final String SIGN = "ЯРМАРКА";
     private static final int[] BACKGROUNDS = {
             R.drawable.fair_scene_water, R.drawable.fair_scene_magnet, R.drawable.fair_scene_scale,
             R.drawable.fair_scene_post, R.drawable.fair_scene_theatre, R.drawable.fair_scene_locks,
@@ -43,6 +46,7 @@ final class FairArt {
             0xa9ffd16c, 0x00ffad53, Shader.TileMode.CLAMP);
     private Bitmap background, panorama;
     private Level cachedLevel;
+    private StaticLayout fairSign;
 
     FairArt(Resources resources, StageArt art) {
         this.resources = resources;
@@ -353,8 +357,24 @@ final class FairArt {
         float to = chase ? PEDAL_X : PILLOW_X;
         if (r.event == Outcome.CAT_LIT_SIGN) glow(c, 243, 94, 127 * smooth(r.effectAge() / .44f));
         color(r.event == Outcome.CAT_LIT_SIGN ? 0xffffe7a0 : 0xff6e452e);
-        paint.setTextSize(27);
-        c.drawText(SIGN, 240, 98, paint);
+        if (fairSign == null) {
+            String sign = resources.getString(R.string.fair_sign);
+            TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            textPaint.setTypeface(paint.getTypeface());
+            textPaint.setTextSize(27);
+            while (textPaint.measureText(sign) > 135 && textPaint.getTextSize() > 11) {
+                textPaint.setTextSize(textPaint.getTextSize() - .5f);
+            }
+            fairSign = StaticLayout.Builder.obtain(sign, 0, sign.length(), textPaint, 135)
+                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .setTextDirection(TextDirectionHeuristics.FIRSTSTRONG_LTR)
+                    .setIncludePad(false).setMaxLines(1).build();
+        }
+        fairSign.getPaint().setColor(paint.getColor());
+        c.save();
+        c.translate(240 - 67.5f, 98 - fairSign.getLineBaseline(0));
+        fairSign.draw(c);
+        c.restore();
         rail(c, MOUSE_X, MOUSE_Y + 7, PEDAL_X, PEDAL_Y - 19, false);
         rail(c, MOUSE_X, MOUSE_Y + 7, PILLOW_X, PEDAL_Y - 29, true);
         art.shadow(c, PILLOW_X, 528, 61, 11);

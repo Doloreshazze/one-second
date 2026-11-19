@@ -7,8 +7,8 @@ adb shell wm size 900x1900
 adb shell wm density 320
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
-adb install "$1"
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+adb install -r "$1"
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_locale ru
 
 expect_screen() {
   local title="$1"
@@ -86,12 +86,12 @@ expect_screen 'Спаси вазу'
 pick_level '19. Вторая секунда'
 expect_screen 'Вторая секунда'
 adb shell am force-stop com.doloreshazze.onesecond
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_locale ru
 expect_screen 'Вторая секунда'
 
 open_audio_settings() {
   adb shell input tap 811 293
-  expect_screen 'Настройки звука'
+  expect_screen 'Настройки'
 }
 
 audio_control() {
@@ -119,15 +119,15 @@ PY
 
 open_audio_settings
 screenshot audio_settings
-audio_control 'Музыка' true 'Настройки звука'
+audio_control 'Музыка' true 'Настройки'
 audio_control 'Звуки' true
-audio_control 'Звуки' true 'Настройки звука'
+audio_control 'Звуки' true 'Настройки'
 adb shell input keyevent KEYCODE_BACK
 adb shell am force-stop com.doloreshazze.onesecond
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_locale ru
 expect_screen 'Вторая секунда'
 open_audio_settings
-audio_control 'Музыка' false 'Настройки звука'
+audio_control 'Музыка' false 'Настройки'
 audio_control 'Звуки' false
 audio_control 'Готово' '' 'Вторая секунда'
 echo 'Verified: separate music and effects settings persist'

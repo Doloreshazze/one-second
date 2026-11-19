@@ -21,6 +21,7 @@ import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.ScrollView;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -61,6 +62,10 @@ final class AudioSettingsDialog extends Dialog {
             onChanged.run();
         }), row(8));
 
+        MainActivity activity = (MainActivity) context;
+        panel.addView(option(R.string.language, () -> GameLocale.choose(activity)), row(8));
+        panel.addView(option(R.string.privacy_policy, () -> PrivacyPolicy.show(activity)), row(8));
+
         Button done = new Button(context);
         done.setText(R.string.audio_done);
         done.setAllCaps(false);
@@ -75,7 +80,10 @@ final class AudioSettingsDialog extends Dialog {
         done.setOnClickListener(view -> dismiss());
         panel.addView(done, row(17));
 
-        setContentView(panel);
+        ScrollView scroll = new ScrollView(context);
+        scroll.setFillViewport(true);
+        scroll.addView(panel);
+        setContentView(scroll);
         setCanceledOnTouchOutside(true);
         Window window = getWindow();
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -87,7 +95,26 @@ final class AudioSettingsDialog extends Dialog {
     public void show() {
         super.show();
         int available = getContext().getResources().getDisplayMetrics().widthPixels;
-        getWindow().setLayout(Math.min(dp(328), available - dp(32)), WRAP_CONTENT);
+        int height = getContext().getResources().getDisplayMetrics().heightPixels;
+        getWindow().setLayout(Math.min(dp(360), available - dp(32)),
+                Math.min(dp(640), height - dp(80)));
+    }
+
+    private Button option(int text, Runnable action) {
+        Button button = new Button(getContext());
+        button.setText(text);
+        button.setAllCaps(false);
+        button.setTextColor(PAPER);
+        button.setTypeface(LABEL);
+        button.setTextSize(15);
+        button.setMinHeight(dp(48));
+        button.setBackgroundTintList(null);
+        button.setBackground(pressable(surface(0xff34343d, 0xff2b2a32, 0xff51483f, 13)));
+        button.setOnClickListener(view -> {
+            dismiss();
+            getWindow().getDecorView().post(action);
+        });
+        return button;
     }
 
     private Switch toggle(int label, boolean enabled, CompoundButton.OnCheckedChangeListener onChange) {

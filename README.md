@@ -1,22 +1,36 @@
-# ONE SECOND! / «Одна секунда!»
+# ONE SECOND! 1.5.0
 
-Мобильная физическая головоломка на один свайп: время заморожено, игрок задаёт траекторию спасательному объекту и запускает цепочку событий.
+A one-swipe physics puzzle for Android by Play Everywhere. Time is frozen:
+choose a direction, throw a marble and watch a chain of events unfold.
 
-## Уже в игре
+The game has 19 illustrated levels, animated characters, quiet background music,
+sound effects, saved progress and 12 interface languages. Version 1.5.0 works
+offline and contains no advertising, analytics SDKs or Android permissions.
 
-- **Уровень 1 — «Спаси вазу»**: направь бирюзовый шар на подушку, чтобы сорвавшаяся ваза не разбилась.
-- **Уровень 2 — «Не разбуди кота»**: проведи шар мимо звонка и спаси рыбку из аквариума.
-- **Уровни 3–9** — «Последняя капля», «Ключ под половицей», «Бумажный пилот», «Мост в последний момент», «Три ноты», «Снимок с котом» и «Сердце мастерской».
-- **Уровни 10–19 — «Ярмарка за окном».** Двор с водяным колесом, магнитный кран, пряничные весы, почтовый подъёмник, театр теней, два замка, кот на педали, воздушный змей, канал и финальные часы.
-- У каждой сцены свой иллюстрированный фон. У «Последней капли» два решения, а «Три ноты» озвучивает каждое попадание по пластине.
-- На ярмарке можно по-разному уравновесить весы и открыть одну из двух постановок театра. В финале эхо повторяет бросок спустя полсекунды.
-- Точки прицеливания показывают начало траектории с учётом отскоков. Нажми на номер уровня, чтобы переиграть уже открытый. Прогресс сохраняется на устройстве.
+## Play
 
-## Управление
+Swipe inside the scene to aim and release the marble. After the result, retry or
+continue. The chapter counter opens unlocked levels. The speaker button opens
+sound settings, language selection and the offline privacy policy.
 
-На замороженном экране сделай один свайп: его направление задаст импульс шару. После этого время запускается — остаётся наблюдать за последствиями.
+## Build and verification
 
-## Сборка
+Use JDK 17, Gradle 8.11.1 and Android SDK 36. The Android Gradle Plugin is 8.10.1.
+GitHub Actions performs the Android builds and emulator checks.
 
-GitHub Actions собирает тестовый APK и проверяет все 19 уровней в эмуляторе. APK и снимки уровней доступны во вкладке **Actions → Build Android APK → Artifacts** в завершённом запуске.
+```sh
+python3 .github/scripts/verify-release.py
+gradle assembleDebug assembleRelease bundleRelease lintRelease --no-daemon
+```
 
+Release files from CI are unsigned and must be signed with the retained upload
+key before Play submission. Never use a temporary emulator or Android Debug key
+as the upload key. No signing material belongs in this repository.
+
+See [release preparation](docs/play-console.md) and the
+[privacy policy](docs/privacy.md).
+
+## Languages
+
+English, Русский, Deutsch, Français, Español, Português, Italiano, Polski,
+Türkçe, العربية, हिन्दी and 简体中文. Unsupported device languages use English.

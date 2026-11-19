@@ -3,3 +3,10 @@ build/
 app/build/
 local.properties
 .idea/
+*.jks
+*.keystore
+*.p12
+*.apk
+*.aab
+artifacts/
+smoke-shots.tsv

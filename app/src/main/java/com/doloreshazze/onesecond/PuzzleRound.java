@@ -2,91 +2,85 @@ package com.doloreshazze.onesecond;
 
 final class PuzzleRound {
     enum Level {
-        VASE("Спаси вазу", "Сдвинь подушку под вазу", 89, 290),
-        CAT("Не разбуди кота", "Попади в аквариум мимо звонка", 89, 423),
-        DROP("Последняя капля", "Спаси рисунок от капли", 86, 345),
-        KEY("Ключ под половицей", "Отбей шар от латунной пластины", 80, 340),
-        GLIDER("Бумажный пилот", "Разверни поток под самолётик", 80, 358),
-        TRAIN("Мост в последний момент", "Опусти мост перед поездом", 88, 300),
-        NOTES("Три ноты", "Задень пластины по порядку", 70, 294),
-        PHOTO("Снимок с котом", "Позвони перед щелчком камеры", 78, 416),
-        CLOCK("Сердце мастерской", "Толкни коромысло под грузом", 78, 354),
-        WATER("Водяное колесо", "Направь воду на колесо", 78, 342),
-        MAGNET("Магнитный кран", "Попади в латунную скобу", 81, 370),
-        SCALE("Весы пряничника", "Уравновесь чаши", 80, 379),
-        POST("Посылка на второй этаж", "Выбери жёлоб для посылки", 76, 351),
-        THEATRE("Театр теней", "Поверни зеркало к экрану", 80, 370),
-        LOCKS("Два замка", "Пошли по шару к каждому замку", 78, 330),
-        MOUSE("Кот на педали", "Пусть мышь заманит кота на педаль", 82, 383),
-        KITE("Дракон на нитке", "Отпусти стопор катушки", 79, 335),
-        CANAL("Лодка с огоньком", "Подтолкни лодку волной", 78, 278),
-        ECHO("Вторая секунда", "Открой проход для эха броска", 74, 335);
+        VASE(89, 290),
+        CAT(89, 423),
+        DROP(86, 345),
+        KEY(80, 340),
+        GLIDER(80, 358),
+        TRAIN(88, 300),
+        NOTES(70, 294),
+        PHOTO(78, 416),
+        CLOCK(78, 354),
+        WATER(78, 342),
+        MAGNET(81, 370),
+        SCALE(80, 379),
+        POST(76, 351),
+        THEATRE(80, 370),
+        LOCKS(78, 330),
+        MOUSE(82, 383),
+        KITE(79, 335),
+        CANAL(78, 278),
+        ECHO(74, 335);
 
-        final String title, objective;
         final float startX, startY;
 
-        Level(String title, String objective, float startX, float startY) {
-            this.title = title;
-            this.objective = objective;
+        Level(float startX, float startY) {
             this.startX = startX;
             this.startY = startY;
         }
     }
 
     enum Outcome {
-        VASE_SAVED(true, "Ваза спасена", "Мягкая посадка"),
-        VASE_BROKEN(false, "Ваза разбилась", "Задень подушку шаром"),
-        FISH_SAVED(true, "Рыбка спасена", "Кот ничего не заметил"),
-        CAT_AWAKE(false, "Кот проснулся!", "Проведи шар выше звонка"),
-        FISH_FELL(false, "Аквариум упал", "Подтолкни аквариум на полку"),
-        DROP_CAUGHT(true, "Капля в блюдце", "Есть ещё один способ спасти рисунок"),
-        PAPER_SAVED(true, "Рисунок сухой", "Лоток ушёл под полку"),
-        INK_BLOT(false, "Клякса с ушами", "Попробуй блюдце или лоток"),
-        KEY_SAVED(true, "Ключ спасён", "Ключ упал на коврик"),
-        KEY_LOST(false, "Ключ у мышки", "Попробуй попасть в пластину снизу"),
-        GLIDER_LANDED(true, "Мягкая посадка", "Ветер донёс самолётик до полки"),
-        GLIDER_WET(false, "Самолётик в чае", "Задень заслонку вентилятора"),
-        TRAIN_CROSSED(true, "Поезд проехал", "Мост встал на место вовремя"),
-        TRAIN_DERAILED(false, "Утка на свободе", "Успей сбить упор под мостом"),
-        NOTES_PLAYED(true, "Мелодия сыграна", "Шкатулка открылась"),
-        NOTES_MISSED(false, "Мелодия оборвалась", "Проведи шар через все три ноты"),
-        PHOTO_TAKEN(true, "Кот в кадре", "Взгляд точно в объектив"),
-        PHOTO_MISSED(false, "Кот отвернулся", "Поймай момент перед вспышкой"),
-        CLOCK_STARTED(true, "Часы пошли", "В мастерской наступило утро"),
-        CLOCK_JAMMED(false, "Часы замерли", "Подними опору до падения груза"),
-        FLAG_RAISED(true, "Флаг над двором", "Вода раскрутила колесо"),
-        BOOT_FILLED(false, "Полный сапог", "Поверни развилку до прихода воды"),
-        TOKEN_CAUGHT(true, "Жетон пойман", "Магнит опустился вовремя"),
-        CLIPS_CAUGHT(false, "Усы из скрепок", "Брось шар прямо в скобу"),
-        TOKEN_LOST(false, "Жетон укатился", "Целься чуть вверх, в латунную скобу"),
-        WEIGHT_REMOVED(true, "Грузик снят", "Лавка открылась"),
-        WEIGHT_ADDED(true, "Гирька на чаше", "Лавка открылась"),
-        SCALE_JAMMED(false, "Лавка закрыта", "Сними груз или добавь гирьку"),
-        PARCEL_DELIVERED(true, "Посылка в корзине", "Корзинка подошла к полке"),
-        PARCEL_IN_HAT(false, "Посылка в шляпе", "Длинный жёлоб задержит шар"),
-        DRAGON_SHADOW(true, "Дракон на сцене", "Есть и другая постановка"),
-        HARE_SHADOW(true, "Заяц на сцене", "Есть и другая постановка"),
-        THEATRE_DARK(false, "Экран погас", "Задень один из упоров зеркала"),
-        BAND_PLAYED(true, "Оркестр играет", "Обе защёлки раскрылись"),
-        ONE_TRUMPET(false, "Один трубач", "Открой замки почти одновременно"),
-        CABINET_SHUT(false, "Крышка закрыта", "Задень второй шар по касательной"),
-        CAT_LIT_SIGN(true, "Вывеска горит", "Кот приземлился на педаль"),
-        MOUSE_CUDDLED(false, "Мышь под боком", "Направь мышь к правой дорожке"),
-        CAT_STILL_SLEEPING(false, "Кот ещё спит", "Подтолкни заводную мышь шаром"),
-        KITE_FLEW(true, "Гирлянда в небе", "Змей пролетел над флюгером"),
-        KITE_TANGLED(false, "Нить запуталась", "Успей освободить катушку"),
-        BOAT_DOCKED(true, "Лодка у причала", "Волна вынесла её из течения"),
-        BOAT_SPUN(false, "Водоворот", "Попади в воду слева от лодки"),
-        FAIR_OPEN(true, "Ярмарка открыта", "Один бросок, две секунды"),
-        FAIR_SHUT(false, "Эхо разминулось", "Проведи оба шара через проход");
+        VASE_SAVED(true),
+        VASE_BROKEN(false),
+        FISH_SAVED(true),
+        CAT_AWAKE(false),
+        FISH_FELL(false),
+        DROP_CAUGHT(true),
+        PAPER_SAVED(true),
+        INK_BLOT(false),
+        KEY_SAVED(true),
+        KEY_LOST(false),
+        GLIDER_LANDED(true),
+        GLIDER_WET(false),
+        TRAIN_CROSSED(true),
+        TRAIN_DERAILED(false),
+        NOTES_PLAYED(true),
+        NOTES_MISSED(false),
+        PHOTO_TAKEN(true),
+        PHOTO_MISSED(false),
+        CLOCK_STARTED(true),
+        CLOCK_JAMMED(false),
+        FLAG_RAISED(true),
+        BOOT_FILLED(false),
+        TOKEN_CAUGHT(true),
+        CLIPS_CAUGHT(false),
+        TOKEN_LOST(false),
+        WEIGHT_REMOVED(true),
+        WEIGHT_ADDED(true),
+        SCALE_JAMMED(false),
+        PARCEL_DELIVERED(true),
+        PARCEL_IN_HAT(false),
+        DRAGON_SHADOW(true),
+        HARE_SHADOW(true),
+        THEATRE_DARK(false),
+        BAND_PLAYED(true),
+        ONE_TRUMPET(false),
+        CABINET_SHUT(false),
+        CAT_LIT_SIGN(true),
+        MOUSE_CUDDLED(false),
+        CAT_STILL_SLEEPING(false),
+        KITE_FLEW(true),
+        KITE_TANGLED(false),
+        BOAT_DOCKED(true),
+        BOAT_SPUN(false),
+        FAIR_OPEN(true),
+        FAIR_SHUT(false);
 
         final boolean won;
-        final String title, detail;
 
-        Outcome(boolean won, String title, String detail) {
+        Outcome(boolean won) {
             this.won = won;
-            this.title = title;
-            this.detail = detail;
         }
     }
 

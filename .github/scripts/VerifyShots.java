@@ -99,9 +99,22 @@ final class VerifyShots {
         int x = 300 + (int) Math.round(Math.cos(radians) * 160);
         int y = 900 + (int) Math.round(Math.sin(radians) * 160);
         System.out.println(level + " " + angle + " degrees => " + outcome);
-        script.add(String.join("\t", level.name().toLowerCase(Locale.ROOT), level.title,
-                outcome.name().toLowerCase(Locale.ROOT), outcome.title,
+        script.add(String.join("\t", level.name().toLowerCase(Locale.ROOT), text("level_" + level.name().toLowerCase(Locale.ROOT) + "_title"),
+                outcome.name().toLowerCase(Locale.ROOT), text("outcome_" + outcome.name().toLowerCase(Locale.ROOT) + "_title"),
                 Integer.toString(x), Integer.toString(y), action));
+    }
+
+    private static String text(String name) {
+        try {
+            var doc = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                    .parse("app/src/main/res/values-ru/strings.xml");
+            var nodes = doc.getElementsByTagName("string");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                var e = (org.w3c.dom.Element) nodes.item(i);
+                if (name.equals(e.getAttribute("name"))) return e.getTextContent().replace("\\'", "'");
+            }
+        } catch (Exception e) { throw new AssertionError(e); }
+        throw new AssertionError("Missing text: " + name);
     }
 
     private static int stableAngle(PuzzleRound[] shots, Outcome expected) {
