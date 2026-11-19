@@ -24,8 +24,19 @@ def start(locale=None):
 
 
 def screen():
-    adb('shell', 'uiautomator', 'dump', '/sdcard/one-second-locale.xml')
-    return ET.fromstring(adb('shell', 'cat', '/sdcard/one-second-locale.xml'))
+    remote = '/data/local/tmp/one-second-locale.xml'
+    last_error = None
+    for _ in range(6):
+        adb('shell', 'rm', '-f', remote)
+        try:
+            dump = adb('shell', 'uiautomator', 'dump', remote)
+            xml = adb('shell', 'cat', remote)
+            return ET.fromstring(xml)
+        except (subprocess.CalledProcessError, ET.ParseError) as error:
+            last_error = error
+            time.sleep(.5)
+    screenshot('failure-locale.png')
+    raise AssertionError('Could not read Android UI: ' + str(last_error))
 
 
 def expect(value):
@@ -59,9 +70,9 @@ def strings(folder):
 
 def settings(text):
     adb('shell', 'input', 'tap', '811', '293')
-    expect(text['audio_settings'])
+    tree = expect(text['audio_settings'])
     for key in ('audio_music', 'audio_effects', 'language', 'privacy_policy'):
-        expect(text[key])
+        assert any(node.get('text') == text[key] for node in tree.iter('node')), key
 
 
 if __name__ == '__main__':

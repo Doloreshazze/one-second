@@ -2,6 +2,7 @@
 set -euo pipefail
 api="$1"
 mkdir -p artifacts/screenshots
+trap 'adb logcat -d -s AndroidRuntime > "artifacts/android-log-api-$api.txt" || true' EXIT
 adb logcat -c
 adb shell wm size 900x1900
 adb shell wm density 320

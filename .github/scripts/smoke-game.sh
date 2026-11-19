@@ -13,9 +13,11 @@ adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_loc
 expect_screen() {
   local title="$1"
   local xml=""
+  local dump_output=""
   for attempt in {1..6}; do
-    if adb shell uiautomator dump /sdcard/one-second-screen.xml >/dev/null 2>&1; then
-      xml="$(adb shell cat /sdcard/one-second-screen.xml)"
+    adb shell rm -f /data/local/tmp/one-second-screen.xml
+    dump_output="$(adb shell uiautomator dump /data/local/tmp/one-second-screen.xml 2>&1 || true)"
+    if xml="$(adb shell cat /data/local/tmp/one-second-screen.xml 2>/dev/null)" && [[ -n "$xml" ]]; then
       if [[ "$xml" == *"$title"* ]]; then
         echo "Verified: $title"
         echo "$xml" > "$screen"
@@ -25,7 +27,9 @@ expect_screen() {
     sleep 1
   done
   echo "Expected screen: $title"
+  echo "$dump_output"
   echo "$xml"
+  adb exec-out screencap -p > artifacts/screenshots/failure.png
   adb logcat -d -s AndroidRuntime
   return 1
 }
