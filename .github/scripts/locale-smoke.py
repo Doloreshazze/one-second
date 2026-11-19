@@ -15,10 +15,8 @@ def adb(*args):
     return subprocess.check_output(['adb', *args], text=True, encoding='utf-8')
 
 
-def start(locale=None):
+def start():
     args = ['shell', 'am', 'start', '-W', '-n', PACKAGE + '/.MainActivity']
-    if locale:
-        args += ['--es', 'smoke_locale', locale]
     output = adb(*args)
     assert 'Error:' not in output, output
 
@@ -75,18 +73,54 @@ def settings(text):
         assert any(node.get('text') == text[key] for node in tree.iter('node')), key
 
 
+LANGUAGES = {'en': 'English', 'ru': 'Русский', 'de': 'Deutsch', 'fr': 'Français',
+             'es': 'Español', 'pt': 'Português', 'it': 'Italiano', 'pl': 'Polski',
+             'tr': 'Türkçe', 'ar': 'العربية', 'hi': 'हिन्दी', 'zh-CN': '简体中文'}
+
+
+def change_language(locale, current):
+    settings(current)
+    tap_text(current['language'])
+    name = LANGUAGES[locale]
+    for _ in range(6):
+        tree = screen()
+        match = next((node for node in tree.iter('node') if node.get('text') == name), None)
+        if match is not None:
+            x1, y1, x2, y2 = map(int, re.findall(r'\d+', match.attrib['bounds']))
+            adb('shell', 'input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
+            return
+        list_node = next(node for node in tree.iter('node') if node.get('scrollable') == 'true')
+        x1, y1, x2, y2 = map(int, re.findall(r'\d+', list_node.attrib['bounds']))
+        x = (x1 + x2) // 2
+        adb('shell', 'input', 'swipe', str(x), str(y2 - 30), str(x), str(y1 + 30), '300')
+    raise AssertionError('Missing language option: ' + name)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--api', required=True)
     parser.add_argument('--release', action='store_true')
+    parser.add_argument('--prepare')
     args = parser.parse_args()
+    english, german = strings('values'), strings('values-de')
+    if args.prepare:
+        adb('shell', 'pm', 'clear', PACKAGE)
+        start()
+        expect(english['level_vase_title'])
+        change_language(args.prepare, english)
+        expect(strings('values-' + args.prepare)['level_vase_title'])
+        print('Prepared game language:', args.prepare, flush=True)
+        raise SystemExit(0)
     if not args.release:
         for locale, folder in [('en', 'values'), ('ru', 'values-ru'), ('de', 'values-de'),
                                ('fr', 'values-fr'), ('es', 'values-es'), ('pt', 'values-pt'),
                                ('it', 'values-it'), ('pl', 'values-pl'), ('tr', 'values-tr'),
                                ('ar', 'values-ar'), ('hi', 'values-hi'), ('zh-CN', 'values-zh-rCN')]:
             adb('shell', 'pm', 'clear', PACKAGE)
-            start(locale)
+            start()
+            expect(english['level_vase_title'])
+            if locale != 'en':
+                change_language(locale, english)
             text = strings(folder)
             expect(text['level_vase_title'])
             expect(text['level_vase_objective'])
@@ -101,7 +135,6 @@ if __name__ == '__main__':
     # Check the real language picker in both the debug and production APKs.
     adb('shell', 'pm', 'clear', PACKAGE)
     start()
-    english, german = strings('values'), strings('values-de')
     expect(english['level_vase_title'])
     settings(english)
     tap_text(english['language'])

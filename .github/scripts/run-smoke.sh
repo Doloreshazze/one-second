@@ -7,7 +7,7 @@ adb logcat -c
 adb shell wm size 900x1900
 adb shell wm density 320
 adb shell input keyevent KEYCODE_WAKEUP
-adb shell wm dismiss-keyguard
+adb shell input keyevent 82
 if [[ "$api" == 36 ]]; then
   bash .github/scripts/smoke-game.sh artifacts/OneSecond-debug.apk artifacts/smoke-shots.tsv
 else

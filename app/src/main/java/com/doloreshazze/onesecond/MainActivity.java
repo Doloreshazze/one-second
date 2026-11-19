@@ -2,7 +2,6 @@ package com.doloreshazze.onesecond;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.media.AudioManager;
 import android.os.Build;
@@ -21,11 +20,6 @@ public class MainActivity extends Activity {
 
     @Override
     public void onCreate(Bundle state) {
-        if (BuildConfig.DEBUG && getIntent().hasExtra("smoke_locale")) {
-            Configuration config = new Configuration();
-            config.setLocale(java.util.Locale.forLanguageTag(getIntent().getStringExtra("smoke_locale")));
-            applyOverrideConfiguration(config);
-        }
         super.onCreate(state);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         sound = new WorkshopSound(getApplicationContext());

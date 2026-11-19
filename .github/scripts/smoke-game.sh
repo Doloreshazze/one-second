@@ -8,7 +8,7 @@ adb shell wm density 320
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 adb install -r "$1"
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_locale ru
+python3 .github/scripts/locale-smoke.py --api 36 --prepare ru
 
 expect_screen() {
   local title="$1"
@@ -90,7 +90,7 @@ expect_screen 'Спаси вазу'
 pick_level '19. Вторая секунда'
 expect_screen 'Вторая секунда'
 adb shell am force-stop com.doloreshazze.onesecond
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_locale ru
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
 expect_screen 'Вторая секунда'
 
 open_audio_settings() {
@@ -128,7 +128,7 @@ audio_control 'Звуки' true
 audio_control 'Звуки' true 'Настройки'
 adb shell input keyevent KEYCODE_BACK
 adb shell am force-stop com.doloreshazze.onesecond
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity --es smoke_locale ru
+adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
 expect_screen 'Вторая секунда'
 open_audio_settings
 audio_control 'Музыка' false 'Настройки'
