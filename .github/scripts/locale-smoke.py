@@ -70,7 +70,16 @@ def settings(text):
     adb('shell', 'input', 'tap', '811', '293')
     tree = expect(text['audio_settings'])
     for key in ('audio_music', 'audio_effects', 'language', 'privacy_policy'):
-        assert any(node.get('text') == text[key] for node in tree.iter('node')), key
+        # Android 7 includes the switch state in its accessible text, such as
+        # "Music ON". Later versions expose the state separately.
+        present = any(node.get('text') == text[key]
+                      or (key in ('audio_music', 'audio_effects')
+                          and node.get('class') == 'android.widget.Switch'
+                          and node.get('text', '').startswith(text[key] + ' '))
+                      for node in tree.iter('node'))
+        if not present:
+            screenshot('failure-settings.png')
+            raise AssertionError(key + '\n' + ET.tostring(tree, encoding='unicode'))
 
 
 LANGUAGES = {'en': 'English', 'ru': 'Русский', 'de': 'Deutsch', 'fr': 'Français',
