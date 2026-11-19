@@ -13,6 +13,8 @@ import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.Window;
 import android.view.WindowManager;
@@ -32,6 +34,7 @@ final class AudioSettingsDialog extends Dialog {
     private static final int PAPER = 0xffffeed9;
     private static final int INK = 0xff2b211d;
     private final float density;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     AudioSettingsDialog(Context context, WorkshopSound sound, Runnable onChanged) {
         super(context);
@@ -112,7 +115,7 @@ final class AudioSettingsDialog extends Dialog {
         button.setBackground(pressable(surface(0xff34343d, 0xff2b2a32, 0xff51483f, 13)));
         button.setOnClickListener(view -> {
             dismiss();
-            getWindow().getDecorView().post(action);
+            mainHandler.post(action);
         });
         return button;
     }
