@@ -89,8 +89,8 @@ done 3< "$2"
 expect_screen 'Спаси вазу'
 pick_level '19. Вторая секунда'
 expect_screen 'Вторая секунда'
-adb shell am force-stop com.doloreshazze.onesecond
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+adb shell am force-stop com.playeverywhere.onesecond
+adb shell am start -W -n com.playeverywhere.onesecond/.MainActivity
 expect_screen 'Вторая секунда'
 
 open_audio_settings() {
@@ -127,8 +127,8 @@ audio_control 'Музыка' true 'Настройки'
 audio_control 'Звуки' true
 audio_control 'Звуки' true 'Настройки'
 adb shell input keyevent KEYCODE_BACK
-adb shell am force-stop com.doloreshazze.onesecond
-adb shell am start -W -n com.doloreshazze.onesecond/.MainActivity
+adb shell am force-stop com.playeverywhere.onesecond
+adb shell am start -W -n com.playeverywhere.onesecond/.MainActivity
 expect_screen 'Вторая секунда'
 open_audio_settings
 audio_control 'Музыка' false 'Настройки'

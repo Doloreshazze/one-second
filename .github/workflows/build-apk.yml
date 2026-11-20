@@ -2,7 +2,7 @@ name: Verify Android release
 
 on:
   push:
-    branches: [main, art-update, release-1.5.0]
+    branches: [main, art-update, release-1.5.1]
   pull_request:
   workflow_dispatch:
 
@@ -37,18 +37,18 @@ jobs:
         run: |
           test_dir="$(mktemp -d)"
           javac -encoding UTF-8 -d "$test_dir" \
-            app/src/main/java/com/doloreshazze/onesecond/PuzzleRound.java \
-            app/src/main/java/com/doloreshazze/onesecond/WorkshopRound.java \
-            app/src/main/java/com/doloreshazze/onesecond/FairRound.java \
+            app/src/main/java/com/playeverywhere/onesecond/PuzzleRound.java \
+            app/src/main/java/com/playeverywhere/onesecond/WorkshopRound.java \
+            app/src/main/java/com/playeverywhere/onesecond/FairRound.java \
             .github/scripts/VerifyShots.java
-          java -cp "$test_dir" com.doloreshazze.onesecond.VerifyShots smoke-shots.tsv
+          java -cp "$test_dir" com.playeverywhere.onesecond.VerifyShots smoke-shots.tsv
       - name: Build APK and AAB and run release lint
         run: gradle assembleDebug assembleRelease bundleRelease lintRelease --no-daemon
       - name: Check packaged files
         run: |
           mkdir -p artifacts/distribution artifacts/test-inputs
-          cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/distribution/OneSecond-1.5.0-release-unsigned.apk
-          cp app/build/outputs/bundle/release/app-release.aab artifacts/distribution/OneSecond-1.5.0-release-unsigned.aab
+          cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/distribution/OneSecond-1.5.1-release-unsigned.apk
+          cp app/build/outputs/bundle/release/app-release.aab artifacts/distribution/OneSecond-1.5.1-release-unsigned.aab
           cp app/build/outputs/apk/debug/app-debug.apk artifacts/test-inputs/OneSecond-debug.apk
           cp smoke-shots.tsv artifacts/test-inputs/
           python3 .github/scripts/verify-release.py \
@@ -58,7 +58,7 @@ jobs:
           gradle :app:dependencies --configuration releaseRuntimeClasspath --no-daemon > artifacts/distribution/runtime-dependencies.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: one-second-1.5.0-release-unsigned
+          name: one-second-1.5.1-release-unsigned
           path: artifacts/distribution
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
@@ -95,7 +95,7 @@ jobs:
           path: artifacts
       - uses: actions/download-artifact@v4
         with:
-          name: one-second-1.5.0-release-unsigned
+          name: one-second-1.5.1-release-unsigned
           path: artifacts/distribution
       - name: Enable KVM
         run: |

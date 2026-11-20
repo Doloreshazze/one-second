@@ -1,10 +1,10 @@
-# ONE SECOND! 1.5.0
+# ONE SECOND! 1.5.1
 
 A one-swipe physics puzzle for Android by Play Everywhere. Time is frozen:
 choose a direction, throw a marble and watch a chain of events unfold.
 
 The game has 19 illustrated levels, animated characters, quiet background music,
-sound effects, saved progress and 12 interface languages. Version 1.5.0 works
+sound effects, saved progress and 12 interface languages. Version 1.5.1 works
 offline and contains no advertising, analytics SDKs or Android permissions.
 
 ## Play

@@ -1,15 +1,15 @@
 plugins { id 'com.android.application' }
 
 android {
-    namespace 'com.doloreshazze.onesecond'
+    namespace 'com.playeverywhere.onesecond'
     compileSdk 36
 
     defaultConfig {
-        applicationId 'com.doloreshazze.onesecond'
+        applicationId 'com.playeverywhere.onesecond'
         minSdk 24
         targetSdk 36
-        versionCode 7
-        versionName '1.5.0'
+        versionCode 8
+        versionName '1.5.1'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

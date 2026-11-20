@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -12,8 +12,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.SparseBooleanArray;
 
-import static com.doloreshazze.onesecond.PuzzleRound.Level;
-import static com.doloreshazze.onesecond.PuzzleRound.Outcome;
+import static com.playeverywhere.onesecond.PuzzleRound.Level;
+import static com.playeverywhere.onesecond.PuzzleRound.Outcome;
 
 final class WorkshopSound {
     private static final String MUSIC_ENABLED = "music";

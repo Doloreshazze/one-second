@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -10,7 +10,7 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
 
-import static com.doloreshazze.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
 
 final class StageArt {
     static final int ICE = 0xffa8f4ee;

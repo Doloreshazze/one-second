@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -12,9 +12,9 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.util.SparseArray;
 
-import static com.doloreshazze.onesecond.PuzzleRound.*;
-import static com.doloreshazze.onesecond.StageArt.*;
-import static com.doloreshazze.onesecond.WorkshopRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.StageArt.*;
+import static com.playeverywhere.onesecond.WorkshopRound.*;
 
 final class WorkshopArt {
     private static final int BRASS = 0xffbf854e;

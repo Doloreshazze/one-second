@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 final class PuzzleRound {
     enum Level {

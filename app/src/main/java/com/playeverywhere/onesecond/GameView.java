@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -22,7 +22,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import static com.doloreshazze.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
 
 final class GameView extends View {
     private static final Level[] LEVELS = Level.values();

@@ -28,9 +28,11 @@ def verify_source():
     assert app.get(ANDROID + 'usesCleartextTraffic') == 'false'
     assert not app.findall('meta-data'), 'Unexpected SDK metadata'
     gradle = (ROOT / 'app/build.gradle').read_text(encoding='utf-8')
+    assert "namespace 'com.playeverywhere.onesecond'" in gradle
+    assert "applicationId 'com.playeverywhere.onesecond'" in gradle
     assert re.search(r'targetSdk\s+36\b', gradle)
-    assert re.search(r'versionCode\s+7\b', gradle)
-    assert "versionName '1.5.0'" in gradle
+    assert re.search(r'versionCode\s+8\b', gradle)
+    assert "versionName '1.5.1'" in gradle
     assert not re.search(r'\b(?:implementation|api|runtimeOnly)\s+[\'\"]', gradle)
     base = strings(RES / 'values/strings.xml')
     nontranslated = {node.attrib['name'] for node in
@@ -50,7 +52,7 @@ def verify_source():
     config = ET.parse(RES / 'xml/locales_config.xml').getroot()
     locales = {item.attrib[ANDROID + 'name'] for item in config}
     assert locales == locale_folders.keys(), (locales, locale_folders.keys())
-    java_dir = ROOT / 'app/src/main/java/com/doloreshazze/onesecond'
+    java_dir = ROOT / 'app/src/main/java/com/playeverywhere/onesecond'
     java = '\n'.join(path.read_text(encoding='utf-8') for path in java_dir.glob('*.java'))
     for name in re.findall(r'R\.string\.(\w+)', java):
         assert name in base, f'Missing R.string.{name}'
@@ -73,7 +75,7 @@ def verify_source():
         actual = re.findall(r'R\.string\.(\w+)', block)
         assert actual == [prefix + item.lower() + suffix for item in entries], array
     assert len(levels) == 19 and len(outcomes) == 45
-    return {'version': '1.5.0', 'target_api': 36, 'levels': len(levels),
+    return {'version': '1.5.1', 'target_api': 36, 'levels': len(levels),
             'outcomes': len(outcomes), 'languages': sorted(locales),
             'strings_per_language': len(base) - len(nontranslated),
             'permissions': [], 'third_party_runtime_dependencies': []}
@@ -99,8 +101,9 @@ def verify_artifacts(directory, aapt):
         if path.suffix == '.apk':
             badging = subprocess.check_output([aapt, 'dump', 'badging', str(path)], text=True)
             permissions = subprocess.check_output([aapt, 'dump', 'permissions', str(path)], text=True)
+            assert "package: name='com.playeverywhere.onesecond'" in badging
             assert "targetSdkVersion:'36'" in badging
-            assert "versionName='1.5.0'" in badging and "versionCode='7'" in badging
+            assert "versionName='1.5.1'" in badging and "versionCode='8'" in badging
             assert 'uses-permission' not in permissions
             if 'release' in path.name:
                 assert 'application-debuggable' not in badging

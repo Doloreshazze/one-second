@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -16,10 +16,10 @@ import android.text.StaticLayout;
 import android.text.TextDirectionHeuristics;
 import android.text.TextPaint;
 
-import static com.doloreshazze.onesecond.FairRound.*;
-import static com.doloreshazze.onesecond.PuzzleRound.*;
-import static com.doloreshazze.onesecond.StageArt.*;
-import static com.doloreshazze.onesecond.WorkshopRound.smooth;
+import static com.playeverywhere.onesecond.FairRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.StageArt.*;
+import static com.playeverywhere.onesecond.WorkshopRound.smooth;
 
 final class FairArt {
     private static final int BRASS = 0xffb68150;

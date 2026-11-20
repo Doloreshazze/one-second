@@ -26,12 +26,12 @@ keytool -genkeypair -keystore "$key_dir/emulator.jks" -alias smoke \
   -storepass emulator-only -keypass emulator-only -keyalg RSA -keysize 2048 \
   -validity 2 -dname "CN=Disposable emulator test" >/dev/null 2>&1
 "$tools/apksigner" sign --ks "$key_dir/emulator.jks" --ks-pass pass:emulator-only \
-  --out artifacts/OneSecond-release-test.apk artifacts/distribution/OneSecond-1.5.0-release-unsigned.apk
-adb uninstall com.doloreshazze.onesecond
+  --out artifacts/OneSecond-release-test.apk artifacts/distribution/OneSecond-1.5.1-release-unsigned.apk
+adb uninstall com.playeverywhere.onesecond
 adb install artifacts/OneSecond-release-test.apk
 python3 .github/scripts/locale-smoke.py --api "$api" --release
 adb logcat -d -s AndroidRuntime > "artifacts/android-log-api-$api.txt"
-if grep -Fq 'Process: com.doloreshazze.onesecond' "artifacts/android-log-api-$api.txt"; then
+if grep -Fq 'Process: com.playeverywhere.onesecond' "artifacts/android-log-api-$api.txt"; then
   cat "artifacts/android-log-api-$api.txt"
   exit 1
 fi

@@ -1,4 +1,4 @@
-# Privacy Policy — ONE SECOND! 1.5.0
+# Privacy Policy — ONE SECOND! 1.5.1
 
 Effective date: 19 November 2026. Developer: Play Everywhere.
 Privacy contact: **daw81bk@gmail.com**.
@@ -38,7 +38,7 @@ the relevant Google Play declarations before that version is distributed.
 
 ---
 
-# Политика конфиденциальности — ONE SECOND! 1.5.0
+# Политика конфиденциальности — ONE SECOND! 1.5.1
 
 Действует с 19 ноября 2026 года. Разработчик: Play Everywhere.
 Контакт по вопросам конфиденциальности: **daw81bk@gmail.com**.

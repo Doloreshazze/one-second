@@ -1,6 +1,6 @@
-# Google Play preparation — 1.5.0
+# Google Play preparation — 1.5.1
 
-Package: `com.doloreshazze.onesecond`. Version code: `7`. Target API: `36`.
+Package: `com.playeverywhere.onesecond`. Version code: `8`. Target API: `36`.
 Minimum Android version: Android 7.0 (API 24).
 
 This version contains 19 levels and 12 interface languages: English, Russian,

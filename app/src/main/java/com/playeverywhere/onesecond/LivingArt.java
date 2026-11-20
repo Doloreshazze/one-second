@@ -1,11 +1,11 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 
-import static com.doloreshazze.onesecond.PuzzleRound.clamp;
+import static com.playeverywhere.onesecond.PuzzleRound.clamp;
 
 final class LivingArt {
     private static final int GRID = 14;

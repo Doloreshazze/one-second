@@ -1,6 +1,6 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
-import static com.doloreshazze.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
 
 final class WorkshopRound {
     enum Action { SAUCER, TRAY, PLATE, FAN, BRIDGE, BELL, ROCKER }

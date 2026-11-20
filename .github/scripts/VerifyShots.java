@@ -1,4 +1,4 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,7 +8,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 
-import static com.doloreshazze.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
 
 final class VerifyShots {
     public static void main(String[] args) throws IOException {

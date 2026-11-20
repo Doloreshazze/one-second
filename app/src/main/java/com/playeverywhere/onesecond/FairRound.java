@@ -1,7 +1,7 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 
-import static com.doloreshazze.onesecond.PuzzleRound.*;
-import static com.doloreshazze.onesecond.WorkshopRound.smooth;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.WorkshopRound.smooth;
 
 final class FairRound {
     enum Action {

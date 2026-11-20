@@ -1,6 +1,6 @@
-package com.doloreshazze.onesecond;
+package com.playeverywhere.onesecond;
 import android.content.Context;
-import static com.doloreshazze.onesecond.PuzzleRound.*;
+import static com.playeverywhere.onesecond.PuzzleRound.*;
 final class GameText {
     private static final int[] LEVEL_TITLES = {
         R.string.level_vase_title,
